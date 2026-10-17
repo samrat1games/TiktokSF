@@ -30,6 +30,7 @@ MARGYT_WORKERS=n says how many to do at once.
 
 from __future__ import annotations
 
+import glob
 import hashlib
 import json
 import os
@@ -234,6 +235,38 @@ def _save(path: str, data: bytes) -> None:
     os.replace(part, path)
 
 
+def _spill(smali: Smali, room: str, dex_out: str, written: List[str],
+           scratch: str) -> bytes:
+    """A dex that is full to the brim cannot take the mod's calls: the 64K method
+    limit. Hand the end of its untouched classes to a dex of their own, and
+    grow the share until both assemble."""
+    import glob
+    kept = set(written)
+    files = sorted(p for p in glob.glob(os.path.join(room, "**", "*.smali"), recursive=True)
+                   if os.path.abspath(p) not in kept)
+    spill = os.path.join(scratch, "spill")
+    spill_dex = os.path.join(scratch, "spill.dex")
+    for share in (0.15, 0.25, 0.35, 0.5, 0.7):
+        shutil.rmtree(spill, ignore_errors=True)
+        moved = []
+        for path in files[len(files) - int(len(files) * share):]:
+            target = os.path.join(spill, os.path.relpath(path, room))
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            shutil.move(path, target)
+            moved.append((path, target))
+        try:
+            smali.assemble(room, dex_out)
+            smali.assemble(spill, spill_dex)
+            with open(spill_dex, "rb") as handle:
+                return handle.read()
+        except RuntimeError as error:
+            if "out of range" not in str(error):
+                raise
+            for path, target in moved:
+                shutil.move(target, path)
+    raise RuntimeError("a dex stayed over the method limit even with most of it moved out")
+
+
 def one(job: dict) -> Tuple[str, Optional[str], Dict[str, int], str]:
     """Patch one dex. Runs in a process of its own.
 
@@ -289,7 +322,13 @@ def one(job: dict) -> Tuple[str, Optional[str], Dict[str, int], str]:
             said = "rewritten as before, not reassembled"
         else:
             dex_out = os.path.join(scratch, "out.dex")
-            smali.assemble(room, dex_out)
+            extra = None
+            try:
+                smali.assemble(room, dex_out)
+            except RuntimeError as error:
+                if "out of range" not in str(error):
+                    raise
+                extra = _spill(smali, room, dex_out, written, scratch)
             with open(dex_out, "rb") as handle:
                 patched = handle.read()
             if dexpatch.dex_format(patched) != dexpatch.dex_format(dex):
@@ -298,7 +337,9 @@ def one(job: dict) -> Tuple[str, Optional[str], Dict[str, int], str]:
                     "enough to be in the apk's minSdk would refuse to load it"
                     % (name, dexpatch.dex_format(patched), dexpatch.dex_format(dex)))
             _save(out, patched)
-            said = "reassembled"
+            if extra is not None:
+                _save(out + ".x1", extra)
+            said = "reassembled" if extra is None else "reassembled, part of it moved to a dex of its own"
         _save(answer_path, json.dumps({"counts": counts, "outcome": outcome})
               .encode("utf-8"))
         return name, out, counts, said
@@ -346,6 +387,10 @@ def patch_all(dexes: Dict[str, bytes], jar: str, api: int, workspace: str,
                     with open(path, "rb") as handle:
                         patched = handle.read()
                 found[name] = (patched, counts)
+                if path:
+                    for extra in sorted(glob.glob(path + ".x*")):
+                        with open(extra, "rb") as handle:
+                            found["%s#%s" % (name, extra.rsplit(".", 1)[-1])] = (handle.read(), {})
                 say("%s: %s (%d of %d, %ds)" % (name, said, len(found), len(names),
                                                  time.time() - started))
         except BaseException:

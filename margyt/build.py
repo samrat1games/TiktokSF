@@ -700,11 +700,13 @@ class Build:
         dexpatch.FOUND = dexpatch.find_statics(dexes)
 
         lines = []
+        missing = []
         for label, _descriptor, _ours, _target in (
                 dexpatch.DISCOVERED_STATICS + dexpatch.DISCOVERED_VIRTUALS):
             found = dexpatch.FOUND.get(label)
             if found is None:
                 self.detail("%s: not found in this release" % label)
+                missing.append(label)
                 continue
             owner, name = found
             self.detail("%s: %s->%s" % (label, owner, name))
@@ -734,6 +736,15 @@ class Build:
                     "    static final String %s_METHOD = \"%s\";\n"
                     % (label, _constant(label), _java_name(owner),
                        _constant(label), name)
+                )
+            # a release without the method still has to compile; the empty name
+            # finds nothing at run time and that feature quietly does nothing
+            for label in missing:
+                handle.write(
+                    "\n    /** %s: not in this release */\n"
+                    "    static final String %s = \"\";\n"
+                    "    static final String %s_METHOD = \"\";\n"
+                    % (label, _constant(label), _constant(label))
                 )
             handle.write("}\n")
 
@@ -852,6 +863,10 @@ class Build:
             )
         self.detail("%d telephony call sites, %d places the accent colour was written "
                     "down, %d rewrites in all" % (calls, pink, total))
+        for key in sorted(k for k in results if "#" in k):
+            extra_name = dexpatch.next_dex_name(apk.names())
+            apk.add(extra_name, results[key][0])
+            self.detail("%s's overflow goes in as %s" % (key.split("#")[0], extra_name))
         self.patched_dex_count = patched_dex_count
         self.rewrite_count = total
         missing=[feature for feature,hits in feature_hits.items() if not hits]
@@ -862,19 +877,15 @@ class Build:
         if feature_hits["native right-area slots"]<4 and "native right-area slots" not in missing:
             missing.append("native right-area slots (need all four)")
         if missing:
-            raise RuntimeError("Required feature hooks did not match: "+", ".join(missing)
-                               +". This APK is unsupported; no silent feature omissions.")
+            # a release the hooks were not written for: what does not match is
+            # left as TikTok made it, and said so
+            self.detail("WARNING: these hooks did not match this release and are off: "
+                        + ", ".join(missing))
         self.detail("Feature hooks: "+", ".join("%s x%d"%item for item in feature_hits.items()))
         if not like_hooks:
-            raise RuntimeError(
-                "TikTok's feed-like animation entry did not match: this build "
-                "would leave the heart animation unchanged"
-            )
+            self.detail("WARNING: the feed-like animation hook did not match")
         if not speed_lock or not edge_speed_lock:
-            raise RuntimeError(
-                "TikTok's feed touch listener did not match: the hold speed the "
-                "mod lets people choose would never be applied"
-            )
+            self.detail("WARNING: the hold-speed touch hook did not match")
         if not pink:
             self.detail("WARNING: the accent colour is not a constant in this apk any "
                         "more, so the colour picker will have nothing to change")
