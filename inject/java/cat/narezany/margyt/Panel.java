@@ -388,18 +388,16 @@ final class Panel {
         b.setGravity(Gravity.CENTER);
         b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         b.setPadding(dp(12), dp(compact ? 8 : 10), dp(12), dp(compact ? 8 : 10));
+        // compose-hig's buttons: a filled capsule for the main one, a tinted
+        // capsule (accent text on a faint accent fill) for the rest
+        int accent = Accent.colour();
+        b.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         if (main) {
-            int accent = Accent.colour();
             b.setTextColor(onAccent(accent));
-            b.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            // a full pill that squares off a little while it is held
-            b.setBackground(Expressive.tile(context, accent, 0x33FFFFFF, dp(24), dp(24), dp(12)));
+            b.setBackground(ImButton.capsule(accent, 0x33FFFFFF, dp(30)));
         } else {
-            // a tonal pill, so that every sheet ends the same way
-            b.setTextColor(skin.text);
-            b.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            b.setBackground(Expressive.tile(context, (skin.text & 0xFFFFFF) | 0x14000000,
-                    (Accent.colour() & 0xFFFFFF) | 0x33000000, dp(24), dp(24), dp(12)));
+            b.setTextColor(accent);
+            b.setBackground(ImButton.capsule((accent & 0xFFFFFF) | 0x26000000, (accent & 0xFFFFFF) | 0x33000000, dp(30)));
             b.setFocusable(true);
         }
         Motion.touch(b);
