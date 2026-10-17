@@ -411,6 +411,10 @@ final class NavBar {
         private Bitmap pixel;
         private Canvas pixelCanvas;
         private int wide, tall;
+        /** Liquid glass: a highlight down the capsule and a rim that is brighter at the top. */
+        private final Paint sheen = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF glassFor = new RectF();
+        private android.graphics.LinearGradient sheenShader, rimShader;
 
         Capsule(float unit) {
             this.unit = unit;
@@ -668,19 +672,32 @@ final class NavBar {
             int veil = away > 0f ? canvas.saveLayerAlpha(body.left - unit, body.top - 8f * unit, body.right + unit,
                     body.bottom + unit, Math.round(255f * (1f - away))) : -1;
             int ink = Md3.ink(ground);
-            int shell = mix(ground, ink, 0.07f), edge = mix(ground, ink, 0.15f);
+            int shell = mix(ground, ink, 0.07f);
             int pill = mix(shell, accent | 0xFF000000, 0.30f);
             int lit = mix(accent | 0xFF000000, ink, 0.40f);
             int quiet = mix(shell, ink, 0.80f);
 
             float round = body.height() / 2f;
-            fill.setColor(shell);
+            // liquid glass: see-through body, a sheen from the top, a rim that catches the light
+            if (!glassFor.equals(body) || sheenShader == null) {
+                glassFor.set(body);
+                sheenShader = new android.graphics.LinearGradient(0f, body.top, 0f, body.bottom,
+                        new int[] {0x40FFFFFF, 0x0DFFFFFF, 0x1AFFFFFF}, new float[] {0f, 0.55f, 1f},
+                        android.graphics.Shader.TileMode.CLAMP);
+                rimShader = new android.graphics.LinearGradient(0f, body.top, 0f, body.bottom,
+                        new int[] {0x8CFFFFFF, 0x26FFFFFF, 0x59FFFFFF}, new float[] {0f, 0.5f, 1f},
+                        android.graphics.Shader.TileMode.CLAMP);
+            }
+            fill.setColor((shell & 0xFFFFFF) | 0xA8000000);
             canvas.drawRoundRect(body, round, round, fill);
+            sheen.setShader(sheenShader);
+            canvas.drawRoundRect(body, round, round, sheen);
             line.setStrokeWidth(unit);
-            line.setColor(edge);
+            line.setShader(rimShader);
             box.set(body);
             box.inset(unit / 2f, unit / 2f);
             canvas.drawRoundRect(box, round, round, line);
+            line.setShader(null);
 
             float middle = body.centerY(), icon = 24f * unit, gap = 6f * unit;
             for (Tab tab : tabs) {
