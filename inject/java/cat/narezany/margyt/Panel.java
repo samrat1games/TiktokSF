@@ -57,7 +57,8 @@ final class Panel {
         if (window != null) {
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
             window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            window.setDimAmount(0.45f);
+            window.setDimAmount(0.25f);
+            ImGlass.blurBehind(window, dp(24));
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
 
@@ -70,11 +71,8 @@ final class Panel {
         };
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(16), dp(10), dp(16), dp(14));
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(skin.card);
-        background.setCornerRadii(new float[]{dp(32),dp(32),dp(32),dp(32),dp(28),dp(28),dp(28),dp(28)});
-        background.setStroke(dp(1), (skin.text & 0xFFFFFF) | 0x18000000);
-        card.setBackground(background);
+        card.setBackground(ImGlass.card(skin.card,
+                new float[]{dp(32),dp(32),dp(32),dp(32),dp(28),dp(28),dp(28),dp(28)}, dp(1)));
 
         if (title != null && title.length() > 0) {
             TextView head = new TextView(context);
