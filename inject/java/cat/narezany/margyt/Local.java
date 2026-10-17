@@ -783,9 +783,9 @@ final class Local {
         add("Каталог плагинов",
                 "Каталог плагінів",
                 "Plugin catalog");
-        add("Каталог MargyT подключён по умолчанию. Можно указать другой HTTPS JSON-каталог; пустой адрес отключает магазин.",
-                "Каталог MargyT підключено за замовчуванням. Можна вказати інший HTTPS JSON-каталог; порожня адреса вимикає магазин.",
-                "MargyT's catalog is connected by default. You can give another HTTPS JSON catalog; an empty address switches the store off.");
+        add("Каталог TikTok SF подключён по умолчанию. Можно указать другой HTTPS JSON-каталог; пустой адрес отключает магазин.",
+                "Каталог TikTok SF підключено за замовчуванням. Можна вказати інший HTTPS JSON-каталог; порожня адреса вимикає магазин.",
+                "TikTok SF's catalog is connected by default. You can give another HTTPS JSON catalog; an empty address switches the store off.");
         add("Серии",
                 "Серії",
                 "Streaks");
@@ -834,9 +834,9 @@ final class Local {
         add("Без расписания",
                 "Без розкладу",
                 "No schedule");
-        add("Обновление MargyT",
-                "Оновлення MargyT",
-                "MargyT update");
+        add("Обновление TikTok SF",
+                "Оновлення TikTok SF",
+                "TikTok SF update");
         add(" с",
                 " с",
                 " s");

@@ -493,7 +493,7 @@ public final class Badge {
         @Override
         public void onClick(View widget) {
             String head = badge.title != null && badge.title.length() > 0
-                    ? badge.title : "MargyT";
+                    ? badge.title : "TikTok SF";
             Popup.show(widget.getContext(), head, badge.text, badge.button,
                     large(widget, badge));
         }

@@ -233,7 +233,7 @@ public class SettingsActivity extends Activity {
             restoreScroll(previousScroll);
             return;
         }
-        column.addView(title(settingsGroup == 0 ? "MargyT" : groupName(settingsGroup)));
+        column.addView(title(settingsGroup == 0 ? "TikTok SF" : groupName(settingsGroup)));
         if(settingsGroup==0 || searchQuery.length()>0)column.addView(searchBox());
         if (settingsGroup != 0) column.addView(wrap(actionRow("info",Local.of("Подсказки"),null,this::showSectionHelp)));
         if (searchQuery.length() > 0) {
@@ -2408,7 +2408,7 @@ public class SettingsActivity extends Activity {
         // the author and the licence live here as well: the licence asks that
         // a fork keep this line and the card that asks for support, rather
         // than moving the name into print nobody reads
-        view.setText("MargyT " + Version.MOD + "  ·  TikTok " + Version.TIKTOK
+        view.setText("TikTok SF " + Version.MOD + "  ·  TikTok " + Version.TIKTOK
                 + "\n" + Text.MADE_BY);
         view.setTextColor(skin.muted());
         view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
@@ -3588,7 +3588,7 @@ public class SettingsActivity extends Activity {
             case 6: return Local.of("Плагины");
             case 7: return Local.of("Друзья и чаты");
             case 8: return Text.FUN;
-            default: return "MargyT";
+            default: return "TikTok SF";
         }
     }
 

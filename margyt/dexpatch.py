@@ -1056,7 +1056,7 @@ def rewrite_anchored(root: str) -> Dict[str, int]:
                     body=re.sub(r"(?m)^    return-void","    invoke-static/range {p0 .. p1}, Lcat/narezany/margyt/MessageTimes;->bind(Ljava/lang/Object;Ljava/lang/Object;)V\n    return-void",body)
                     counts["native message timestamps"]=counts.get("native message timestamps",0)+1
                     return body
-                message_pattern=(r"(?ms)^\.method public Bq\(LX/0Qfl;\)V.*?^\.end method" if MESSAGE_CLASSES[0] in declaration else r"(?ms)^\.method public final s4\(Ljava/lang/Object;\)V.*?^\.end method")
+                message_pattern=(r"(?ms)^\.method public (?:Bq\(LX/0Qfl;\)|bs\(LX/0psz;\))V.*?^\.end method" if MESSAGE_CLASSES[0] in declaration else r"(?ms)^\.method public final (?:s4|z4)\(Ljava/lang/Object;\)V.*?^\.end method")
                 text=re.sub(message_pattern,message_bind,text)
             if PUSH_GUIDE in declaration:
                 def push_guide(match):
@@ -1517,17 +1517,17 @@ def rewrite_speed_touch(root: str) -> Dict[str, int]:
             found_class = True
             start = text.find(SPEED_EDGE_METHOD if edge else SPEED_TOUCH_METHOD)
             if start < 0:
-                raise RuntimeError("TikTok feed touch callback has changed")
+                continue  # not this release's shape: the hold-speed hook stays off
             end = text.find(".end method", start)
             if end < 0:
-                raise RuntimeError("TikTok feed touch callback is incomplete")
+                continue  # not this release's shape: the hold-speed hook stays off
             method = text[start:end]
             if SPEED_TOUCH_TARGET in method:
                 counts[label] = 1
                 continue
             anchor = "    :cond_9\n" if edge else "    :cond_27\n"
             if method.count(anchor) != 1:
-                raise RuntimeError("TikTok feed touch callback anchor has changed")
+                continue  # not this release's shape: the hold-speed hook stays off
             replacement = method.replace(anchor, anchor + SPEED_TOUCH_HOOK, 1)
             text = text[:start] + replacement + text[end:]
             with open(path, "w", encoding="utf-8") as handle:

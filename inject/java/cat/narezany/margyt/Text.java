@@ -72,7 +72,7 @@ final class Text {
     static final String DL_LOW=pick("Минимальное доступное","Мінімальна доступна","Lowest available");
     static final String DL_AUDIO=pick("Только звук","Лише звук","Audio only");
     static final String FRAME_QUALITY=pick("Размер кадра","Розмір кадру","Frame size");
-    static final String VIDEO_ACTIONS_HINT=pick("Удерживайте «Отправить» на видео, чтобы открыть действия MargyT.","Утримуйте «Надіслати» на відео, щоб відкрити дії MargyT.","Hold Share on a video to open MargyT actions.");
+    static final String VIDEO_ACTIONS_HINT=pick("Удерживайте «Отправить» на видео, чтобы открыть действия TikTok SF.","Утримуйте «Надіслати» на відео, щоб відкрити дії TikTok SF.","Hold Share on a video to open TikTok SF actions.");
     static final String APPLY=pick("Применить","Застосувати","Apply");
     static final String RAIL=pick("Кнопки видео","Кнопки відео","Video buttons");
     static final String RAIL_LIKE=pick("Лайк","Вподобайка","Like");
@@ -88,11 +88,11 @@ final class Text {
     static final String HIDDEN_RESTORE_ALL=pick("Вернуть всё","Повернути все","Restore all");
     static final String HIDDEN_NEXT_PAGE=pick("Изменения применятся при следующей загрузке ленты.","Зміни застосуються під час наступного завантаження стрічки.","Changes apply when the feed next loads.");
 
-    static final String ROW = pick("Настройки MargyT", "Налаштування MargyT", "MargyT settings");
+    static final String ROW = pick("Настройки TikTok SF", "Налаштування TikTok SF", "TikTok SF settings");
     static final String UPDATE_UNAVAILABLE = pick(
-            "Источник обновлений MargyT ещё не настроен",
-            "Джерело оновлень MargyT ще не налаштовано",
-            "The MargyT update source is not configured yet");
+            "Источник обновлений TikTok SF ещё не настроен",
+            "Джерело оновлень TikTok SF ще не налаштовано",
+            "The TikTok SF update source is not configured yet");
     static final String DIAGNOSTICS = pick("Диагностика", "Діагностика", "Diagnostics");
     static final String COPY_DIAGNOSTICS = pick("Копировать диагностику",
             "Копіювати діагностику", "Copy diagnostics");
@@ -141,12 +141,12 @@ final class Text {
     static final String PROFILE_GLOW = pick("Мягкое свечение", "М’яке сяйво", "Subtle glow");
     static final String PROFILE_ANIMATED = pick("Анимировать градиент", "Анімувати градієнт", "Animate gradient");
     static final String PROFILE_SPEED = pick("Скорость градиента", "Швидкість градієнта", "Gradient speed");
-    static final String PROFILE_SHARE = pick("Показывать стиль другим MargyT",
-            "Показувати стиль іншим MargyT", "Share style with other MargyT users");
+    static final String PROFILE_SHARE = pick("Показывать стиль другим TikTok SF",
+            "Показувати стиль іншим TikTok SF", "Share style with other TikTok SF users");
     static final String PROFILE_SHARE_WAIT = pick(
-            "Общий стиль станет доступен после подключения HTTPS-сервера MargyT",
-            "Спільний стиль стане доступним після підключення HTTPS-сервера MargyT",
-            "Shared style needs a MargyT HTTPS service");
+            "Общий стиль станет доступен после подключения HTTPS-сервера TikTok SF",
+            "Спільний стиль стане доступним після підключення HTTPS-сервера TikTok SF",
+            "Shared style needs a TikTok SF HTTPS service");
     static final String STORE_OFFLINE = pick("Магазин плагинов недоступен без HTTPS-сервера",
             "Магазин плагінів недоступний без HTTPS-сервера",
             "Plugin store needs an HTTPS service");
@@ -164,8 +164,8 @@ final class Text {
     static final String THEME_PRESETS_NOTE = pick("Классическая, синяя или исходная тема TikTok",
             "Класична, синя або початкова тема TikTok",
             "Classic, blue or original TikTok theme");
-    static final String OPEN_TTCUZ_SITE = pick("Инструкции на сайте MargyT",
-            "Інструкції на сайті MargyT", "Instructions on the MargyT site");
+    static final String OPEN_TTCUZ_SITE = pick("Инструкции на сайте TikTok SF",
+            "Інструкції на сайті TikTok SF", "Instructions on the TikTok SF site");
     static final String THEME_COLOURS = pick("Цвета интерфейса",
             "Кольори інтерфейсу", "Interface colours");
     static final String THEME_COLOURS_NOTE = pick(
@@ -329,15 +329,15 @@ final class Text {
             "Тестовая сборка", "Тестова збірка", "A test build");
 
     static final String TEST_TEXT = pick(
-            "Это тестовая сборка MargyT — она только для тех, кто поддержал "
+            "Это тестовая сборка TikTok SF — она только для тех, кто поддержал "
                     + "разработку. Настройки мода откроются на аккаунте со значком "
                     + "поддержавшего; TikTok работает как обычно. Если значка нет, "
                     + "поставьте обычную версию с сайта.",
-            "Це тестова збірка MargyT — вона лише для тих, хто підтримав "
+            "Це тестова збірка TikTok SF — вона лише для тих, хто підтримав "
                     + "розробку. Налаштування мода відкриються на акаунті зі значком "
                     + "того, хто підтримав; TikTok працює як завжди. Якщо значка "
                     + "немає, встановіть звичайну версію з сайту.",
-            "This is a test build of MargyT, and it is for the people who paid "
+            "This is a test build of TikTok SF, and it is for the people who paid "
                     + "for the work. The mod's settings open on an account with the "
                     + "supporter badge; TikTok itself works as usual. Without the "
                     + "badge, install the ordinary version from the site.");
@@ -362,9 +362,9 @@ final class Text {
     static final String GRADIENT = pick("Градиент на ник", "Градієнт на нік", "Name gradient");
 
     static final String GRADIENT_NOTE = pick(
-            "Ник в градиенте видят все, у кого стоит MargyT. Менять можно раз в минуту.",
-            "Нік у градієнті бачать усі, у кого стоїть MargyT. Міняти можна раз на хвилину.",
-            "Everyone running MargyT sees it. Changing is allowed once a minute.");
+            "Ник в градиенте видят все, у кого стоит TikTok SF. Менять можно раз в минуту.",
+            "Нік у градієнті бачать усі, у кого стоїть TikTok SF. Міняти можна раз на хвилину.",
+            "Everyone running TikTok SF sees it. Changing is allowed once a minute.");
 
     static final String GRADIENT_ONLY = pick(
             "Только для поддержавших разработку",
@@ -601,12 +601,12 @@ final class Text {
 
     static final String DONATE_BANNER_TEXT = pick(
             "От 250 ₽: значок рядом с ником, градиент на ник и закрытый чат. "
-                    + "Значок и градиент видят все с MargyT.",
+                    + "Значок и градиент видят все с TikTok SF.",
             "Від 250 ₽: значок поруч із ніком, градієнт на нік і закритий чат. "
-                    + "Значок і градієнт бачать усі з MargyT.",
+                    + "Значок і градієнт бачать усі з TikTok SF.",
             "From 250 roubles: a badge beside your name, a gradient on the name "
                     + "and the private chat. The badge and the gradient are seen "
-                    + "by everyone on MargyT.");
+                    + "by everyone on TikTok SF.");
 
     static final String DONATE_BANNER_HOW = pick(
             "После перевода — в сообщения канала: чек и ваш ID аккаунта.",
@@ -831,7 +831,7 @@ final class Text {
             "Lock the speed by swiping down");
 
     static final String REMIND_TITLE = pick(
-            "Нравится MargyT?", "Подобається MargyT?", "Enjoying MargyT?");
+            "Нравится TikTok SF?", "Подобається TikTok SF?", "Enjoying TikTok SF?");
 
     static final String REMIND_TEXT = pick(
             "Поддержи разработку — значок рядом с ником, градиент на ник "
@@ -979,9 +979,9 @@ final class Text {
             "A free badge for the old lot");
 
     static final String FREE_BADGE_TEXT = pick(
-            "Бирюзовый значок «Использовал MargyT до 24-го сентября». "
+            "Бирюзовый значок «Использовал TikTok SF до 24-го сентября». "
                     + "После 24-го его больше не выдадут, ни за что.",
-            "Бірюзовий значок «Користувався MargyT до 24-го вересня». "
+            "Бірюзовий значок «Користувався TikTok SF до 24-го вересня». "
                     + "Після 24-го його більше не видадуть, ні за що.",
             "A turquoise badge that says you were here before the 24th of "
                     + "September. After that nobody gets one, at any price.");
@@ -1409,9 +1409,9 @@ final class Text {
     // First-run question about crash reports.
     static final String CONSENT_TITLE = pick("Помочь исправлять сбои?", "Допомогти виправляти збої?", "Help fix crashes?");
     static final String CONSENT_BODY = pick(
-            "Если MargyT вылетит, он отправит разработчику технический след сбоя: версию мода и Android, список вызовов. Без сообщений, аккаунта и личных данных.",
-            "Якщо MargyT вилетить, він надішле розробнику технічний слід збою: версію мода й Android, список викликів. Без повідомлень, акаунта й особистих даних.",
-            "If MargyT crashes, it sends the developer a technical trace: the mod and Android versions and the call list. No messages, account or personal data.");
+            "Если TikTok SF вылетит, он отправит разработчику технический след сбоя: версию мода и Android, список вызовов. Без сообщений, аккаунта и личных данных.",
+            "Якщо TikTok SF вилетить, він надішле розробнику технічний слід збою: версію мода й Android, список викликів. Без повідомлень, акаунта й особистих даних.",
+            "If TikTok SF crashes, it sends the developer a technical trace: the mod and Android versions and the call list. No messages, account or personal data.");
     static final String CONSENT_NOTE = pick(
             "Выбор можно изменить в настройках мода: «Диагностика» → «Отчёты о сбоях».",
             "Вибір можна змінити в налаштуваннях мода: «Діагностика» → «Звіти про збої».",
@@ -1426,15 +1426,15 @@ final class Text {
     static final String TUTORIAL_DONE = pick("Готово", "Готово", "Done");
     static final String TUTORIAL_SKIP = pick("Пропустить", "Пропустити", "Skip");
     static final String[] TUTORIAL_TITLES = {
-            pick("Добро пожаловать в MargyT", "Ласкаво просимо в MargyT", "Welcome to MargyT"),
+            pick("Добро пожаловать в TikTok SF", "Ласкаво просимо в TikTok SF", "Welcome to TikTok SF"),
             pick("Своя палитра", "Своя палітра", "Your own palette"),
             pick("Защита экрана", "Захист екрана", "Screen protection"),
             pick("Значки и градиент", "Значки й градієнт", "Badges and a gradient"),
             pick("Всё под рукой", "Все під рукою", "Everything at hand")};
     static final String[] TUTORIAL_WORDS = {
-            pick("Все функции мода собраны в одном месте: профиль → меню → настройки TikTok → MargyT.",
-                    "Усі функції мода зібрано в одному місці: профіль → меню → налаштування TikTok → MargyT.",
-                    "Every feature of the mod lives in one place: profile → menu → TikTok settings → MargyT."),
+            pick("Все функции мода собраны в одном месте: профиль → меню → настройки TikTok → TikTok SF.",
+                    "Усі функції мода зібрано в одному місці: профіль → меню → налаштування TikTok → TikTok SF.",
+                    "Every feature of the mod lives in one place: profile → menu → TikTok settings → TikTok SF."),
             pick("Откройте «Внешний вид» → «Акцент». Круг — доступный цвет, квадрат — выбранный.",
                     "Відкрийте «Зовнішній вигляд» → «Акцент». Коло — доступний колір, квадрат — вибраний.",
                     "Open Appearance → Accent. A circle is an available colour, a square is the chosen one."),
@@ -1444,9 +1444,9 @@ final class Text {
             pick("В разделе «Профиль» лежат значки и градиент на ник. Чтобы менять их, аккаунт подтверждается один раз: код на минуту ставится в описание профиля.",
                     "У розділі «Профіль» лежать значки й градієнт на нік. Щоб змінювати їх, акаунт підтверджується один раз: код на хвилину ставиться в опис профілю.",
                     "Badges and the gradient on your name live under Profile. Changing them takes proving the account once: a code sits in your bio for a minute."),
-            pick("Прозрачность меняется сразу. Если другой настройке нужен перезапуск, снизу появится кнопка. Отчёты о сбоях включаются в «Диагностике». Это обучение можно открыть снова в MargyT.",
-                    "Прозорість змінюється одразу. Якщо іншому налаштуванню потрібен перезапуск, знизу з’явиться кнопка. Звіти про збої вмикаються в «Діагностиці». Це навчання можна відкрити знову в MargyT.",
-                    "Transparency changes at once. When another setting needs a restart, a button appears at the bottom. Crash reports are switched in Diagnostics. You can reopen this tour in MargyT.")};
+            pick("Прозрачность меняется сразу. Если другой настройке нужен перезапуск, снизу появится кнопка. Отчёты о сбоях включаются в «Диагностике». Это обучение можно открыть снова в TikTok SF.",
+                    "Прозорість змінюється одразу. Якщо іншому налаштуванню потрібен перезапуск, знизу з’явиться кнопка. Звіти про збої вмикаються в «Діагностиці». Це навчання можна відкрити знову в TikTok SF.",
+                    "Transparency changes at once. When another setting needs a restart, a button appears at the bottom. Crash reports are switched in Diagnostics. You can reopen this tour in TikTok SF.")};
 
     /** 0 for Russian, 1 for Ukrainian, 2 for everything else: for {@link Local}. */
     static int language3() {
