@@ -177,9 +177,89 @@ final class NavBar {
     };
 
     /** A screen came up. The bar is put together after it, so it is looked for more than once. */
+    private static final WeakHashMap<android.view.Window, Boolean> WRAPPED = new WeakHashMap<android.view.Window, Boolean>();
+    private static int touchMode;                 // 0 nothing, 1 pressed on the bar, 2 dragging the lens
+    private static float touchX, touchY;
+    private static Capsule touchCapsule;
+    private static View touchBar;
+
+    /** Watch the touches that start on the capsule, so it can be held and dragged. */
+    private static void wrap(final android.view.Window window) {
+        final android.view.Window.Callback base = window.getCallback();
+        if (base == null || WRAPPED.containsKey(window)) return;
+        WRAPPED.put(window, Boolean.TRUE);
+        window.setCallback((android.view.Window.Callback) java.lang.reflect.Proxy.newProxyInstance(
+                NavBar.class.getClassLoader(), new Class<?>[] {android.view.Window.Callback.class},
+                (proxy, method, args) -> {
+                    try {
+                        if (method.getName().equals("dispatchTouchEvent") && args != null && args.length == 1
+                                && args[0] instanceof android.view.MotionEvent
+                                && touched((android.view.MotionEvent) args[0], base)) return Boolean.TRUE;
+                    } catch (Throwable error) {
+                        touchMode = 0;
+                    }
+                    try {
+                        return method.invoke(base, args);
+                    } catch (java.lang.reflect.InvocationTargetException error) {
+                        throw error.getCause() != null ? error.getCause() : error;
+                    }
+                }));
+    }
+
+    private static boolean touched(android.view.MotionEvent event, android.view.Window.Callback base) {
+        int action = event.getActionMasked();
+        if (action == android.view.MotionEvent.ACTION_DOWN) {
+            touchMode = 0;
+            touchCapsule = null;
+            for (java.util.Map.Entry<View, Capsule> entry : BARS.entrySet()) {
+                View bar = entry.getKey();
+                Capsule capsule = entry.getValue();
+                if (bar != null && capsule != null && capsule.hits(bar, event.getRawX(), event.getRawY())) {
+                    touchCapsule = capsule;
+                    touchBar = bar;
+                    touchX = event.getRawX();
+                    touchY = event.getRawY();
+                    touchMode = 1;
+                    break;
+                }
+            }
+            return false;
+        }
+        if (touchMode == 0 || touchCapsule == null) return false;
+        if (action == android.view.MotionEvent.ACTION_MOVE) {
+            if (touchMode == 1) {
+                float slop = android.view.ViewConfiguration.get(touchBar.getContext()).getScaledTouchSlop();
+                float dx = event.getRawX() - touchX, dy = event.getRawY() - touchY;
+                if (Math.abs(dx) <= slop || Math.abs(dx) <= Math.abs(dy)) return false;
+                // the tab under the finger is told the touch is over, and the lens takes it from here
+                android.view.MotionEvent cancel = android.view.MotionEvent.obtain(event);
+                cancel.setAction(android.view.MotionEvent.ACTION_CANCEL);
+                base.dispatchTouchEvent(cancel);
+                cancel.recycle();
+                touchMode = 2;
+            }
+            touchCapsule.follow(touchBar, event.getRawX());
+            return true;
+        }
+        if (action == android.view.MotionEvent.ACTION_UP || action == android.view.MotionEvent.ACTION_CANCEL) {
+            boolean was = touchMode == 2;
+            if (was) {
+                if (action == android.view.MotionEvent.ACTION_UP) touchCapsule.drop(touchBar);
+                else touchCapsule.cancelDrag(touchBar);
+            }
+            touchMode = 0;
+            touchCapsule = null;
+            return was;
+        }
+        return touchMode == 2;
+    }
+
     static void attach(Activity activity) {
         try {
-            if (isEnabled()) look(activity.getWindow().getDecorView(), 0);
+            if (isEnabled()) {
+                wrap(activity.getWindow());
+                look(activity.getWindow().getDecorView(), 0);
+            }
         } catch (Throwable error) {
             Diary.detail("nav bar: " + error);
         }
@@ -411,6 +491,81 @@ final class NavBar {
         private Bitmap pixel;
         private Canvas pixelCanvas;
         private int wide, tall;
+        /** Held and dragged, as in compose-hig: the glass lens follows the finger and picks the tab it is let go over. */
+        private boolean dragging;
+        private float lensX;
+        private int lastNear = -1;
+
+        boolean hits(View bar, float rawX, float rawY) {
+            if (!worn || tabs.length == 0 || body.isEmpty() || awayTo >= 1f || !bar.isShown()) return false;
+            int[] at = new int[2];
+            bar.getLocationOnScreen(at);
+            float x = rawX - at[0], y = rawY - at[1];
+            return x >= body.left && x <= body.right && y >= body.top && y <= body.bottom;
+        }
+
+        private int nearest() {
+            int best = -1;
+            float gap = Float.MAX_VALUE;
+            for (int i = 0; i < tabs.length; i++) {
+                if (tabs[i].kind == CREATE) continue;
+                float away = Math.abs((tabs[i].left + tabs[i].right) / 2f - lensX);
+                if (away < gap) { gap = away; best = i; }
+            }
+            return best;
+        }
+
+        void follow(View bar, float rawX) {
+            int[] at = new int[2];
+            bar.getLocationOnScreen(at);
+            float low = Float.MAX_VALUE, high = -Float.MAX_VALUE;
+            for (Tab tab : tabs) {
+                if (tab.kind == CREATE) continue;
+                float centre = (tab.left + tab.right) / 2f;
+                low = Math.min(low, centre);
+                high = Math.max(high, centre);
+            }
+            if (low > high) return;
+            lensX = Math.max(low, Math.min(high, rawX - at[0]));
+            int near = nearest();
+            if (dragging && near != lastNear && lastNear != -1) bar.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
+            lastNear = near;
+            dragging = true;
+            bar.invalidate();
+        }
+
+        void drop(View bar) {
+            int to = nearest();
+            dragging = false;
+            lastNear = -1;
+            if (to >= 0 && !tabs[to].view.isSelected()) tabs[to].view.performClick();
+            bar.invalidate();
+        }
+
+        void cancelDrag(View bar) {
+            dragging = false;
+            lastNear = -1;
+            bar.invalidate();
+        }
+
+        /** A drop of glass: tinted, lit from above, with a bright rim. */
+        private void glass(Canvas canvas, RectF area, float amount, int tint) {
+            float curve = area.height() / 2f;
+            fill.setColor((tint & 0xFFFFFF) | (Math.round(0xB8 * amount) << 24));
+            canvas.drawRoundRect(area, curve, curve, fill);
+            sheen.setShader(new android.graphics.LinearGradient(0f, area.top, 0f, area.bottom,
+                    new int[] {0x73FFFFFF, 0x00FFFFFF, 0x2EFFFFFF}, new float[] {0f, 0.6f, 1f},
+                    android.graphics.Shader.TileMode.CLAMP));
+            sheen.setAlpha(Math.round(255f * amount));
+            canvas.drawRoundRect(area, curve, curve, sheen);
+            line.setStrokeWidth(unit);
+            line.setColor(0xFFFFFFFF);
+            line.setAlpha(Math.round(0x8C * amount));
+            float rim = unit / 2f;
+            canvas.drawRoundRect(area.left + rim, area.top + rim, area.right - rim, area.bottom - rim,
+                    curve, curve, line);
+            sheen.setShader(sheenShader);
+        }
         /** Liquid glass: a highlight down the capsule and a rim that is brighter at the top. */
         private final Paint sheen = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final RectF glassFor = new RectF();
@@ -705,6 +860,12 @@ final class NavBar {
             line.setShader(null);
 
             float middle = body.centerY(), icon = 23f * unit, gap = 6f * unit;
+            if (dragging) {
+                int near = nearest();
+                float wideLens = near < 0 ? 64f * unit : tabs[near].right - tabs[near].left;
+                box.set(lensX - wideLens / 2f - 4f * unit, body.top + unit, lensX + wideLens / 2f + 4f * unit, body.bottom - unit);
+                glass(canvas, box, 1f, pill);
+            }
             for (Tab tab : tabs) {
                 int saved = -1;
                 if (tab.shown < 0.99f) {
@@ -715,31 +876,16 @@ final class NavBar {
                 if (tab.kind == CREATE) {
                     create(canvas, centre, middle, ink, lit);
                 } else {
-                    if (tab.open > 0.01f) {
+                    if (!dragging && tab.open > 0.01f) {
                         float half = ((tab.right - tab.left) / 2f - 2f * unit) * (0.8f + 0.2f * tab.open);
                         box.set(centre - half, body.top + 4f * unit, centre + half, body.bottom - 4f * unit);
-                        // the open tab is a drop of glass: accent-tinted, lit from above, with a bright rim
-                        float amount = Math.min(1f, tab.open * 1.5f);
-                        float curve = box.height() / 2f;
-                        fill.setColor((pill & 0xFFFFFF) | (Math.round(0xB8 * amount) << 24));
-                        canvas.drawRoundRect(box, curve, curve, fill);
-                        sheen.setShader(new android.graphics.LinearGradient(0f, box.top, 0f, box.bottom,
-                                new int[] {0x73FFFFFF, 0x00FFFFFF, 0x2EFFFFFF}, new float[] {0f, 0.6f, 1f},
-                                android.graphics.Shader.TileMode.CLAMP));
-                        sheen.setAlpha(Math.round(255f * amount));
-                        canvas.drawRoundRect(box, curve, curve, sheen);
-                        line.setStrokeWidth(unit);
-                        line.setColor(0xFFFFFFFF);
-                        line.setAlpha(Math.round(0x8C * amount));
-                        float rim = unit / 2f;
-                        canvas.drawRoundRect(box.left + rim, box.top + rim, box.right - rim, box.bottom - rim,
-                                curve, curve, line);
-                        sheen.setShader(sheenShader);
+                        glass(canvas, box, Math.min(1f, tab.open * 1.5f), pill);
                     }
                     // compose-hig's tab: the icon above, the name under it, the open tab in the accent
                     float iconLeft = centre - icon / 2f;
                     float iconTop = body.top + 0.13f * body.height();
-                    int colour = mix(quiet, lit, tab.open);
+                    float live = dragging ? Math.max(0f, 1f - Math.abs(centre - lensX) / Math.max(1f, tab.right - tab.left)) : tab.open;
+                    int colour = mix(quiet, lit, live);
                     emblem(canvas, tab, iconLeft, iconTop, icon, colour);
                     if (tab.name != null) {
                         float room = Math.max(0f, tab.right - tab.left - 4f * unit);

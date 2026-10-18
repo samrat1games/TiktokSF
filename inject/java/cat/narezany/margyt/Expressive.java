@@ -241,10 +241,37 @@ final class Expressive {
             setOrientation(VERTICAL);
             this.fill = fill;
             this.ripple = ripple;
-            this.outer = dp(context, 26);
-            this.inner = dp(context, 6);
-            this.gap = dp(context, 2);
-            this.pressed = dp(context, 28);
+            this.outer = dp(context, 24);
+            this.inner = dp(context, 0);
+            this.gap = 0f;
+            this.pressed = dp(context, 0);
+            // compose-hig's inset grouped section: one rounded block, rows with hairlines between them
+            android.graphics.drawable.GradientDrawable block = new android.graphics.drawable.GradientDrawable();
+            block.setColor(fill);
+            block.setCornerRadius(outer);
+            setBackground(block);
+            setClipToOutline(true);
+            setWillNotDraw(false);
+            hairline.setColor(0x2E808080);
+            hairline.setStrokeWidth(Math.max(1f, dp(context, 0.5f)));
+        }
+
+        private final android.graphics.Paint hairline = new android.graphics.Paint();
+
+        @Override
+        protected void dispatchDraw(android.graphics.Canvas canvas) {
+            super.dispatchDraw(canvas);
+            float inset = dp(getContext(), 18);
+            boolean first = true;
+            for (int i = 0; i < getChildCount(); i++) {
+                View child = getChildAt(i);
+                if (child.getVisibility() == GONE) continue;
+                if (!first) {
+                    float y = child.getTop();
+                    canvas.drawLine(inset, y, getWidth() - inset, y, hairline);
+                }
+                first = false;
+            }
         }
 
         @Override
@@ -288,8 +315,10 @@ final class Expressive {
                     view.setLayoutParams(params);
                 }
                 if (!ours(view)) continue;
-                view.setBackground(tile(getContext(), fill, ripple,
-                        i == first ? outer : inner, i == last ? outer : inner, pressed));
+                // the block carries the fill; a row only shows where it is pressed
+                view.setBackground(new RippleDrawable(
+                        android.content.res.ColorStateList.valueOf(ripple), null,
+                        new android.graphics.drawable.ColorDrawable(0xFF000000)));
             }
         }
     }
