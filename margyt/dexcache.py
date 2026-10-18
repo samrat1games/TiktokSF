@@ -306,6 +306,7 @@ def one(job: dict) -> Tuple[str, Optional[str], Dict[str, int], str]:
     scratch = os.path.join(job["workspace"], name.replace(".dex", ""))
     shutil.rmtree(scratch, ignore_errors=True)
     os.makedirs(scratch, exist_ok=True)
+    tree = None
     try:
         tree = _pieces(dex, dex_sha, smali, root, scratch)
         room = os.path.join(scratch, "smali")
@@ -345,6 +346,9 @@ def one(job: dict) -> Tuple[str, Optional[str], Dict[str, int], str]:
         return name, out, counts, said
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
+        if tree and os.environ.get("MARGYT_NO_CACHE"):
+            # nothing is kept, so the taken-apart dex goes as soon as it is used: all of them at once is gigabytes
+            shutil.rmtree(os.path.dirname(tree), ignore_errors=True)
 
 
 def patch_all(dexes: Dict[str, bytes], jar: str, api: int, workspace: str,

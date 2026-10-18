@@ -613,7 +613,7 @@ final class NavBar {
                 top = 0f;
                 bottom = tall;
             }
-            float room = Math.min(bottom - top - 6f * unit, 52f * unit);
+            float room = Math.min(bottom - top - 4f * unit, 60f * unit);
             float middle = (top + bottom) / 2f;
             body.set(8f * unit, middle - room / 2f, wide - 8f * unit, middle + room / 2f);
             float inside = 4f * unit, left = body.left + inside, right = body.right - inside;
@@ -636,8 +636,7 @@ final class NavBar {
             float[] open = new float[to - from], extra = new float[to - from];
             for (int i = from; i < to; i++) {
                 open[i - from] = tabs[i].open;
-                extra[i - from] = tabs[i].name == null || tabs[i].kind == CREATE ? 0f
-                        : tabs[i].nameWide + 8f * unit + badge(tabs[i]);
+                extra[i - from] = 0f;   // compose-hig: the name is under the icon, so no tab needs more room
             }
             float[] edges = NavPlan.edges(right - left, open, extra, 36f * unit);
             for (int i = from; i < to; i++) {
@@ -682,13 +681,19 @@ final class NavBar {
             if (!glassFor.equals(body) || sheenShader == null) {
                 glassFor.set(body);
                 sheenShader = new android.graphics.LinearGradient(0f, body.top, 0f, body.bottom,
-                        new int[] {0x40FFFFFF, 0x0DFFFFFF, 0x1AFFFFFF}, new float[] {0f, 0.55f, 1f},
+                        new int[] {0x66FFFFFF, 0x0DFFFFFF, 0x26FFFFFF}, new float[] {0f, 0.55f, 1f},
                         android.graphics.Shader.TileMode.CLAMP);
                 rimShader = new android.graphics.LinearGradient(0f, body.top, 0f, body.bottom,
                         new int[] {0x8CFFFFFF, 0x26FFFFFF, 0x59FFFFFF}, new float[] {0f, 0.5f, 1f},
                         android.graphics.Shader.TileMode.CLAMP);
             }
-            fill.setColor((shell & 0xFFFFFF) | 0xA8000000);
+            for (int ring = 4; ring >= 1; ring--) {
+                fill.setColor(0x0D000000);
+                float grow = ring * 1.5f * unit;
+                box.set(body.left - grow, body.top - grow * 0.4f, body.right + grow, body.bottom + grow * 1.6f);
+                canvas.drawRoundRect(box, round + grow, round + grow, fill);
+            }
+            fill.setColor((shell & 0xFFFFFF) | 0x8C000000);
             canvas.drawRoundRect(body, round, round, fill);
             sheen.setShader(sheenShader);
             canvas.drawRoundRect(body, round, round, sheen);
@@ -699,7 +704,7 @@ final class NavBar {
             canvas.drawRoundRect(box, round, round, line);
             line.setShader(null);
 
-            float middle = body.centerY(), icon = 24f * unit, gap = 6f * unit;
+            float middle = body.centerY(), icon = 23f * unit, gap = 6f * unit;
             for (Tab tab : tabs) {
                 int saved = -1;
                 if (tab.shown < 0.99f) {
@@ -711,43 +716,49 @@ final class NavBar {
                     create(canvas, centre, middle, ink, lit);
                 } else {
                     if (tab.open > 0.01f) {
-                        float half = (tab.right - tab.left) / 2f * (0.6f + 0.4f * tab.open);
+                        float half = ((tab.right - tab.left) / 2f - 2f * unit) * (0.8f + 0.2f * tab.open);
                         box.set(centre - half, body.top + 4f * unit, centre + half, body.bottom - 4f * unit);
-                        fill.setColor(pill);
-                        fill.setAlpha(Math.round(255f * Math.min(1f, tab.open * 1.5f)));
-                        canvas.drawRoundRect(box, box.height() / 2f, box.height() / 2f, fill);
+                        // the open tab is a drop of glass: accent-tinted, lit from above, with a bright rim
+                        float amount = Math.min(1f, tab.open * 1.5f);
+                        float curve = box.height() / 2f;
+                        fill.setColor((pill & 0xFFFFFF) | (Math.round(0xB8 * amount) << 24));
+                        canvas.drawRoundRect(box, curve, curve, fill);
+                        sheen.setShader(new android.graphics.LinearGradient(0f, box.top, 0f, box.bottom,
+                                new int[] {0x73FFFFFF, 0x00FFFFFF, 0x2EFFFFFF}, new float[] {0f, 0.6f, 1f},
+                                android.graphics.Shader.TileMode.CLAMP));
+                        sheen.setAlpha(Math.round(255f * amount));
+                        canvas.drawRoundRect(box, curve, curve, sheen);
+                        line.setStrokeWidth(unit);
+                        line.setColor(0xFFFFFFFF);
+                        line.setAlpha(Math.round(0x8C * amount));
+                        float rim = unit / 2f;
+                        canvas.drawRoundRect(box.left + rim, box.top + rim, box.right - rim, box.bottom - rim,
+                                curve, curve, line);
+                        sheen.setShader(sheenShader);
                     }
-                    // a name too long for its tab is set a little smaller before it is cut short
-                    float badge = badge(tab);
-                    float room = Math.max(0f, tab.right - tab.left - 2f * 8f * unit - icon - gap - badge);
-                    float shrink = tab.name == null || tab.nameWide <= room ? 1f : Math.max(0.82f, room / tab.nameWide);
-                    float text = tab.name == null ? 0f : Math.min(tab.nameWide * shrink, room);
-                    float content = icon + tab.open * (gap + text + badge);
-                    float start = centre - content / 2f;
+                    // compose-hig's tab: the icon above, the name under it, the open tab in the accent
+                    float iconLeft = centre - icon / 2f;
+                    float iconTop = body.top + 0.13f * body.height();
                     int colour = mix(quiet, lit, tab.open);
-                    emblem(canvas, tab, start, middle - icon / 2f, icon, colour);
-                    if (tab.name != null && tab.open > 0.05f && text > 0f) {
-                        int clip = canvas.save();
-                        canvas.clipRect(start + icon, body.top, Math.min(start + icon + gap + text, tab.right), body.bottom);
-                        words.setTextSize(13f * unit * shrink);
-                        words.setColor(colour);
-                        words.setAlpha(Math.round(255f * tab.open));
-                        Paint.FontMetrics metrics = words.getFontMetrics();
-                        canvas.drawText(tab.name, start + icon + gap,
-                                middle - (metrics.ascent + metrics.descent) / 2f, words);
-                        words.setTextSize(13f * unit);
-                        canvas.restoreToCount(clip);
+                    emblem(canvas, tab, iconLeft, iconTop, icon, colour);
+                    if (tab.name != null) {
+                        float room = Math.max(0f, tab.right - tab.left - 4f * unit);
+                        float size = 10.5f * unit;
+                        small.setTextSize(size);
+                        float wideName = small.measureText(tab.name);
+                        if (wideName > room && room > 0f) {
+                            size = Math.max(8f * unit, size * room / wideName);
+                            small.setTextSize(size);
+                        }
+                        small.setColor(colour);
+                        canvas.drawText(tab.name, centre, body.bottom - 0.14f * body.height(), small);
+                        small.setTextSize(10.5f * unit);
                     }
                     if (tab.count != null) {
-                        // on the corner of the icon while the tab is shut, and after its name once
-                        // it is open, where it is not over the first letters of it
-                        float high = 16f * unit;
-                        float shutLeft = start + icon - 9f * unit, shutUp = Math.max(body.top + unit, middle - icon / 2f - 5f * unit);
-                        float openLeft = start + icon + gap + text + 4f * unit, openUp = middle - high / 2f;
-                        number(canvas, tab.count, shutLeft + (openLeft - shutLeft) * tab.open,
-                                shutUp + (openUp - shutUp) * tab.open, mix(shell, pill, tab.open));
+                        number(canvas, tab.count, iconLeft + icon - 7f * unit,
+                                Math.max(body.top + unit, iconTop - 5f * unit), mix(shell, pill, tab.open));
                     }
-                    else if (tab.dot) spot(canvas, start + icon - 2f * unit, middle - icon / 2f + 3f * unit, shell);
+                    else if (tab.dot) spot(canvas, iconLeft + icon - 2f * unit, iconTop + 3f * unit, shell);
                 }
                 if (saved >= 0) canvas.restoreToCount(saved);
             }
