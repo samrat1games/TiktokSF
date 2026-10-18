@@ -491,6 +491,7 @@ final class NavBar {
         private Bitmap pixel;
         private Canvas pixelCanvas;
         private int wide, tall;
+        private boolean unclipped;
         private final Paint symbolPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
 
         /** Which of SfIcons' tabs this tab is: home, friends, inbox, profile; none for the rest. */
@@ -557,20 +558,8 @@ final class NavBar {
         /** A drop of glass: tinted, lit from above, with a bright rim. */
         private void glass(Canvas canvas, RectF area, float amount, int tint) {
             float curve = area.height() / 2f;
-            fill.setColor((tint & 0xFFFFFF) | (Math.round(0xB8 * amount) << 24));
+            fill.setColor((tint & 0xFFFFFF) | (Math.round(0xFF * amount) << 24));
             canvas.drawRoundRect(area, curve, curve, fill);
-            sheen.setShader(new android.graphics.LinearGradient(0f, area.top, 0f, area.bottom,
-                    new int[] {0x73FFFFFF, 0x00FFFFFF, 0x2EFFFFFF}, new float[] {0f, 0.6f, 1f},
-                    android.graphics.Shader.TileMode.CLAMP));
-            sheen.setAlpha(Math.round(255f * amount));
-            canvas.drawRoundRect(area, curve, curve, sheen);
-            line.setStrokeWidth(unit);
-            line.setColor(0xFFFFFFFF);
-            line.setAlpha(Math.round(0x8C * amount));
-            float rim = unit / 2f;
-            canvas.drawRoundRect(area.left + rim, area.top + rim, area.right - rim, area.bottom - rim,
-                    curve, curve, line);
-            sheen.setShader(sheenShader);
         }
         /** Liquid glass: a highlight down the capsule and a rim that is brighter at the top. */
         private final Paint sheen = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -719,7 +708,9 @@ final class NavBar {
 
         private void release(View tab) {
             tab.setTranslationX(0f);
+            tab.setTranslationY(0f);
             tab.setScaleX(1f);
+            tab.setScaleY(1f);
             tab.setClipBounds(null);
         }
 
@@ -769,14 +760,25 @@ final class NavBar {
         /** Where everything goes along the bar, for how far open each tab is now. */
         private void arrange(ViewGroup bar) {
             if (tabs.length == 0) return;
+            if (!unclipped) {
+                unclipped = true;
+                bar.setClipChildren(false);
+                bar.setClipToPadding(false);
+                android.view.ViewParent up = bar.getParent();
+                for (int i = 0; i < 4 && up instanceof ViewGroup; i++) {
+                    ((ViewGroup) up).setClipChildren(false);
+                    ((ViewGroup) up).setClipToPadding(false);
+                    up = up.getParent();
+                }
+            }
             float top = tabs[0].view.getTop(), bottom = tabs[0].view.getBottom();
             if (bottom <= top) {
                 top = 0f;
                 bottom = tall;
             }
-            float room = Math.min(bottom - top - 2f * unit, 62f * unit);
-            float middle = (top + bottom) / 2f;
-            body.set(8f * unit, middle - room / 2f, wide - 8f * unit, middle + room / 2f);
+            // compose-hig's bar: 62 dp tall, floating a little above the bottom edge
+            float lift = 10f * unit;
+            body.set(8f * unit, bottom - lift - 62f * unit, wide - 8f * unit, bottom - lift);
             float inside = 4f * unit, left = body.left + inside, right = body.right - inside;
             int centre = tabs.length / 2;
             if (tabs.length % 2 == 1 && tabs[centre].kind == CREATE) {
@@ -818,6 +820,13 @@ final class NavBar {
                 // a bar that is out of sight has its tabs off the side of the screen, where no finger is
                 if (awayTo >= 1f) shift += wide * 3f;
                 float stretch = (right - left) / view.getWidth();
+                if (view.getHeight() > 0) {
+                    float lowerShift = (body.top + body.bottom) / 2f - (view.getTop() + view.getHeight() / 2f);
+                    float taller = body.height() / view.getHeight();
+                    if (Math.abs(view.getPivotY() - view.getHeight() / 2f) > 0.5f) view.setPivotY(view.getHeight() / 2f);
+                    if (Math.abs(view.getTranslationY() - lowerShift) > 0.5f) view.setTranslationY(lowerShift);
+                    if (Math.abs(view.getScaleY() - taller) > 0.002f) view.setScaleY(taller);
+                }
                 if (Math.abs(view.getPivotX() - view.getWidth() / 2f) > 0.5f) view.setPivotX(view.getWidth() / 2f);
                 if (Math.abs(view.getTranslationX() - shift) > 0.5f) view.setTranslationX(shift);
                 if (Math.abs(view.getScaleX() - stretch) > 0.002f) view.setScaleX(stretch);
@@ -835,7 +844,7 @@ final class NavBar {
             boolean dark = bright(ground) < 0.5f;
             // the colours of compose-hig's bar: a grey container, a lighter lens, the system blue for what is selected
             int shell = dark ? 0xFF2C2C2E : 0xFFF2F2F7;
-            int pill = dark ? 0xFF636366 : 0xFFD1D1D6;
+            int pill = dark ? 0xFF48484A : 0xFFD8D8DD;
             int lit = dark ? 0xFF0A84FF : 0xFF007AFF;
             int quiet = dark ? 0xFFFFFFFF : 0xFF1C1C1E;
 
@@ -850,16 +859,13 @@ final class NavBar {
                         new int[] {0x8CFFFFFF, 0x26FFFFFF, 0x59FFFFFF}, new float[] {0f, 0.5f, 1f},
                         android.graphics.Shader.TileMode.CLAMP);
             }
-            fill.setColor((shell & 0xFFFFFF) | 0xE0000000);
+            fill.setColor(shell | 0xFF000000);
             canvas.drawRoundRect(body, round, round, fill);
-            sheen.setShader(sheenShader);
-            canvas.drawRoundRect(body, round, round, sheen);
             line.setStrokeWidth(unit);
-            line.setShader(rimShader);
+            line.setColor(0x1FFFFFFF);
             box.set(body);
             box.inset(unit / 2f, unit / 2f);
             canvas.drawRoundRect(box, round, round, line);
-            line.setShader(null);
 
             float middle = body.centerY(), icon = 24f * unit, gap = 6f * unit;
             if (dragging) {
