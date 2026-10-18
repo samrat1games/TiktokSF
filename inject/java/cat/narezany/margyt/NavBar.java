@@ -491,6 +491,12 @@ final class NavBar {
         private Bitmap pixel;
         private Canvas pixelCanvas;
         private int wide, tall;
+        private final Paint symbolPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+
+        /** Which of SfIcons' tabs this tab is: home, friends, inbox, profile; none for the rest. */
+        private int sfSlot(int kind) {
+            return kind == HOME ? 0 : kind == FRIENDS ? 1 : kind == INBOX ? 2 : kind == PROFILE ? 3 : -1;
+        }
         /** Held and dragged, as in compose-hig: the glass lens follows the finger and picks the tab it is let go over. */
         private boolean dragging;
         private float lensX;
@@ -575,7 +581,7 @@ final class NavBar {
             this.unit = unit;
             line.setStyle(Paint.Style.STROKE);
             words.setTextSize(13f * unit);
-            small.setTextSize(10.5f * unit);
+            small.setTextSize(11f * unit);
             small.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
             small.setTextAlign(Paint.Align.CENTER);
         }
@@ -768,7 +774,7 @@ final class NavBar {
                 top = 0f;
                 bottom = tall;
             }
-            float room = Math.min(bottom - top - 4f * unit, 60f * unit);
+            float room = Math.min(bottom - top - 2f * unit, 62f * unit);
             float middle = (top + bottom) / 2f;
             body.set(8f * unit, middle - room / 2f, wide - 8f * unit, middle + room / 2f);
             float inside = 4f * unit, left = body.left + inside, right = body.right - inside;
@@ -826,10 +832,12 @@ final class NavBar {
             int veil = away > 0f ? canvas.saveLayerAlpha(body.left - unit, body.top - 8f * unit, body.right + unit,
                     body.bottom + unit, Math.round(255f * (1f - away))) : -1;
             int ink = Md3.ink(ground);
-            int shell = mix(ground, ink, 0.07f);
-            int pill = mix(shell, accent | 0xFF000000, 0.30f);
-            int lit = mix(accent | 0xFF000000, ink, 0.40f);
-            int quiet = mix(shell, ink, 0.80f);
+            boolean dark = bright(ground) < 0.5f;
+            // the colours of compose-hig's bar: a grey container, a lighter lens, the system blue for what is selected
+            int shell = dark ? 0xFF2C2C2E : 0xFFF2F2F7;
+            int pill = dark ? 0xFF636366 : 0xFFD1D1D6;
+            int lit = dark ? 0xFF0A84FF : 0xFF007AFF;
+            int quiet = dark ? 0xFFFFFFFF : 0xFF1C1C1E;
 
             float round = body.height() / 2f;
             // liquid glass: see-through body, a sheen from the top, a rim that catches the light
@@ -842,13 +850,7 @@ final class NavBar {
                         new int[] {0x8CFFFFFF, 0x26FFFFFF, 0x59FFFFFF}, new float[] {0f, 0.5f, 1f},
                         android.graphics.Shader.TileMode.CLAMP);
             }
-            for (int ring = 4; ring >= 1; ring--) {
-                fill.setColor(0x0D000000);
-                float grow = ring * 1.5f * unit;
-                box.set(body.left - grow, body.top - grow * 0.4f, body.right + grow, body.bottom + grow * 1.6f);
-                canvas.drawRoundRect(box, round + grow, round + grow, fill);
-            }
-            fill.setColor((shell & 0xFFFFFF) | 0x8C000000);
+            fill.setColor((shell & 0xFFFFFF) | 0xE0000000);
             canvas.drawRoundRect(body, round, round, fill);
             sheen.setShader(sheenShader);
             canvas.drawRoundRect(body, round, round, sheen);
@@ -859,7 +861,7 @@ final class NavBar {
             canvas.drawRoundRect(box, round, round, line);
             line.setShader(null);
 
-            float middle = body.centerY(), icon = 23f * unit, gap = 6f * unit;
+            float middle = body.centerY(), icon = 24f * unit, gap = 6f * unit;
             if (dragging) {
                 int near = nearest();
                 float wideLens = near < 0 ? 64f * unit : tabs[near].right - tabs[near].left;
@@ -878,18 +880,18 @@ final class NavBar {
                 } else {
                     if (!dragging && tab.open > 0.01f) {
                         float half = ((tab.right - tab.left) / 2f - 2f * unit) * (0.8f + 0.2f * tab.open);
-                        box.set(centre - half, body.top + 4f * unit, centre + half, body.bottom - 4f * unit);
+                        box.set(centre - half, body.top + 3f * unit, centre + half, body.bottom - 3f * unit);
                         glass(canvas, box, Math.min(1f, tab.open * 1.5f), pill);
                     }
                     // compose-hig's tab: the icon above, the name under it, the open tab in the accent
                     float iconLeft = centre - icon / 2f;
-                    float iconTop = body.top + 0.13f * body.height();
+                    float iconTop = body.top + 0.21f * body.height();
                     float live = dragging ? Math.max(0f, 1f - Math.abs(centre - lensX) / Math.max(1f, tab.right - tab.left)) : tab.open;
                     int colour = mix(quiet, lit, live);
                     emblem(canvas, tab, iconLeft, iconTop, icon, colour);
                     if (tab.name != null) {
                         float room = Math.max(0f, tab.right - tab.left - 4f * unit);
-                        float size = 10.5f * unit;
+                        float size = 11f * unit;
                         small.setTextSize(size);
                         float wideName = small.measureText(tab.name);
                         if (wideName > room && room > 0f) {
@@ -897,8 +899,8 @@ final class NavBar {
                             small.setTextSize(size);
                         }
                         small.setColor(colour);
-                        canvas.drawText(tab.name, centre, body.bottom - 0.14f * body.height(), small);
-                        small.setTextSize(10.5f * unit);
+                        canvas.drawText(tab.name, centre, body.top + 0.77f * body.height(), small);
+                        small.setTextSize(11f * unit);
                     }
                     if (tab.count != null) {
                         number(canvas, tab.count, iconLeft + icon - 7f * unit,
@@ -934,6 +936,16 @@ final class NavBar {
                 faceShader.setLocalMatrix(faceFit);
                 facePaint.setShader(faceShader);
                 canvas.drawPath(shape, facePaint);
+            } else if (sfSlot(tab.kind) >= 0 && SfIcons.get(sfSlot(tab.kind), tab.open > 0.5f) != null) {
+                Bitmap symbol = SfIcons.get(sfSlot(tab.kind), tab.open > 0.5f);
+                float boxW = 30f * unit, boxH = size;
+                float scale = Math.min(boxW / symbol.getWidth(), boxH / symbol.getHeight());
+                float w = symbol.getWidth() * scale, h = symbol.getHeight() * scale;
+                symbolPaint.setColorFilter(new android.graphics.PorterDuffColorFilter(colour, android.graphics.PorterDuff.Mode.SRC_IN));
+                box.set(left + size / 2f - w / 2f, top + size / 2f - h / 2f, left + size / 2f + w / 2f, top + size / 2f + h / 2f);
+                canvas.restoreToCount(saved);
+                saved = canvas.save();
+                canvas.drawBitmap(symbol, null, box, symbolPaint);
             } else if (path != null) {
                 canvas.translate(left, top);
                 canvas.scale(size / 960f, size / 960f);
@@ -959,18 +971,22 @@ final class NavBar {
 
         /** The button that makes a video: TikTok's two-coloured lozenge, in the colours of the theme. */
         private void create(Canvas canvas, float centre, float middle, int ink, int lit) {
-            float half = 15f * unit, round = 11f * unit;
-            fill.setColor(lit);
-            box.set(centre - 24f * unit, middle - half, centre + 24f * unit, middle + half);
-            canvas.drawRoundRect(box, round, round, fill);
-            fill.setColor(ink);
-            box.set(centre - 20f * unit, middle - half, centre + 20f * unit, middle + half);
-            canvas.drawRoundRect(box, round, round, fill);
-            line.setStrokeWidth(2.4f * unit);
-            line.setColor(bright(ink) < 0.5f ? 0xFFFFFFFF : 0xFF161823);
+            boolean light = bright(ink) < 0.5f;          // a light page has a dark ink
+            int stroke = light ? 0xFF1C1C1E : 0xFFFFFFFF;
+            float halfW = 15f * unit, halfH = 11f * unit, round = 7f * unit;
+            line.setStyle(Paint.Style.STROKE);
             line.setStrokeCap(Paint.Cap.ROUND);
-            canvas.drawLine(centre - 6.5f * unit, middle, centre + 6.5f * unit, middle, line);
-            canvas.drawLine(centre, middle - 6.5f * unit, centre, middle + 6.5f * unit, line);
+            line.setStrokeWidth(1.6f * unit);
+            line.setColor(stroke);
+            line.setAlpha(150);
+            box.set(centre - halfW, middle - halfH - 4f * unit, centre + halfW, middle + halfH - 4f * unit);
+            canvas.drawRoundRect(box, round, round, line);
+            line.setStrokeWidth(2.2f * unit);
+            line.setColor(stroke);
+            float plus = 6.5f * unit, up = middle - 4f * unit;
+            canvas.drawLine(centre - plus, up, centre + plus, up, line);
+            canvas.drawLine(centre, up - plus, centre, up + plus, line);
+            line.setStrokeWidth(unit);
             line.setStrokeCap(Paint.Cap.BUTT);
         }
 
