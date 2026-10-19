@@ -500,6 +500,9 @@ final class NavBar {
         }
         /** Held and dragged, as in compose-hig: the glass lens follows the finger and picks the tab it is let go over. */
         private boolean dragging;
+        private int holdIndex = -1;
+        private long holdUntil;
+        private boolean warmed;
         private float lensX;
         private int lastNear = -1;
 
@@ -545,7 +548,13 @@ final class NavBar {
             int to = nearest();
             dragging = false;
             lastNear = -1;
-            if (to >= 0 && !tabs[to].view.isSelected()) tabs[to].view.performClick();
+            if (to >= 0 && !tabs[to].view.isSelected()) {
+                // it was put where it is: the tabs take it at once, and the lens is not sent round the way
+                holdIndex = to;
+                holdUntil = SystemClock.uptimeMillis() + 1500L;
+                for (int i = 0; i < tabs.length; i++) tabs[i].open = tabs[i].from = tabs[i].to = i == to ? 1f : 0f;
+                tabs[to].view.performClick();
+            }
             bar.invalidate();
         }
 
@@ -582,7 +591,9 @@ final class NavBar {
             boolean moving = false;
             boolean animated = Motion.enabled(bar.getContext());
             for (Tab tab : tabs) {
-                float target = tab.view.isSelected() ? 1f : 0f;
+                float target = SystemClock.uptimeMillis() < holdUntil
+                        ? (tab == tabs[Math.max(0, Math.min(tabs.length - 1, holdIndex))] ? 1f : 0f)
+                        : tab.view.isSelected() ? 1f : 0f;
                 if (target != tab.to) {
                     tab.from = tab.open;
                     tab.to = target;
@@ -961,32 +972,41 @@ final class NavBar {
             if (Math.abs(springSpeed) > unit * 2f || Math.abs(target - springPos) > unit * 0.3f) invalidateSelf();
             float centre = springPos;
             float stretch = Math.min(0.32f, Math.abs(springSpeed) / Math.max(1f, wide) * 0.16f);
-            float grow = 1.06f + 0.22f * press;
+            float grow = 1f + 0.22f * press;
             float half = (wide - 4f * unit) / 2f * grow * (1f + stretch);
             float high = (body.height() - 6f * unit) / 2f * grow * (1f - 0.55f * stretch);
             lensBox.set(centre - half, body.centerY() - high, centre + half, body.centerY() + high);
             float shown = dragging ? 1f : Math.min(1f, sum * 1.5f);
-            if (LiquidLens.supported()) {
-                try {
-                    int w = Math.round(body.width()), h = Math.round(body.height());
-                    if (backdrop == null || backdrop.getWidth() != w || backdrop.getHeight() != h) {
-                        backdrop = Bitmap.createBitmap(Math.max(1, w), Math.max(1, h), Bitmap.Config.ARGB_8888);
-                        backdropCanvas = new Canvas(backdrop);
-                    }
-                    backdrop.eraseColor(0);
-                    int saved = backdropCanvas.save();
-                    backdropCanvas.translate(-body.left, -body.top);
-                    content(backdropCanvas);
-                    backdropCanvas.restoreToCount(saved);
-                    if (liquid == null) liquid = new LiquidLens();
-                    liquid.draw(canvas, backdrop, body.left, body.top, lensBox, unit, shown);
-                    return;
-                } catch (Throwable error) {
-                    Diary.detail("liquid lens: " + error);
-                }
+            boolean darkPage = bright(ground) < 0.5f;
+            int flat = darkPage ? 0xFF48484A : 0xFFD8D8DD;
+            // at rest it is a plain pill; it turns to glass only while it moves or is held
+            float busy = Math.max(press, Math.max(Math.min(1f, Math.abs(springSpeed) / (unit * 60f)),
+                    Math.min(1f, Math.abs(target - springPos) / (unit * 12f))));
+            if (busy < 0.999f) glass(canvas, lensBox, shown * (1f - busy), flat);
+            if (!LiquidLens.supported()) {
+                if (busy > 0f) glass(canvas, lensBox, shown * busy, flat);
+                return;
             }
-            boolean dark = bright(ground) < 0.5f;
-            glass(canvas, lensBox, shown, dark ? 0xFF48484A : 0xFFD8D8DD);
+            // drawn once, nearly clear, as the bar comes up, so the shader is ready before it is wanted
+            if (busy < 0.01f && warmed) return;
+            try {
+                int w = Math.round(body.width()), h = Math.round(body.height());
+                if (backdrop == null || backdrop.getWidth() != w || backdrop.getHeight() != h) {
+                    backdrop = Bitmap.createBitmap(Math.max(1, w), Math.max(1, h), Bitmap.Config.ARGB_8888);
+                    backdropCanvas = new Canvas(backdrop);
+                }
+                backdrop.eraseColor(0);
+                int saved = backdropCanvas.save();
+                backdropCanvas.translate(-body.left, -body.top);
+                content(backdropCanvas);
+                backdropCanvas.restoreToCount(saved);
+                if (liquid == null) liquid = new LiquidLens();
+                liquid.draw(canvas, backdrop, body.left, body.top, lensBox, unit, warmed ? shown * busy : 0.004f);
+                warmed = true;
+            } catch (Throwable error) {
+                Diary.detail("liquid lens: " + error);
+                glass(canvas, lensBox, shown, flat);
+            }
         }
 
         /** The icon of a tab: one of the mod's, or TikTok's own for a tab the mod has none for. */
