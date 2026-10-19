@@ -26,7 +26,7 @@ import com.ss.android.ugc.aweme.profile.model.User;
  * the same 35c instruction, the same register count, the same return type --
  * rather than anything that has to understand the download.
  *
- * It is off by default and it falls back on itself: when the switch is off, or
+ * It is on by default and it falls back on itself: when the switch is off, or
  * when the unstamped address is missing for this post, what comes back is
  * exactly what TikTok asked for. A post whose clean address the server did not
  * send still saves, stamped, instead of failing to save at all.
@@ -75,7 +75,7 @@ public final class Download {
         SharedPreferences prefs = prefs();
         if (prefs == null) return null;
         try {
-            return prefs.getBoolean(key, false);
+            return prefs.getBoolean(key, true);
         } catch (Throwable ignored) {
             return Boolean.FALSE;
         }

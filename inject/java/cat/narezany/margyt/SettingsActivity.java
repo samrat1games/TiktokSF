@@ -464,20 +464,11 @@ public class SettingsActivity extends Activity {
 
         column.addView(section(Text.DOWNLOADS));
         LinearLayout downloads = card();
-        downloads.addView(actionRow("image",Text.FRAME_QUALITY,Integer.toString(FrameCapture.quality()),()->{
-            new ModDialog.Builder(this).setItems(new String[]{"480","720","1080"},(dialog,index)->{AccountAppearance.prefs(this).edit().putInt(FrameCapture.KEY,new int[]{480,720,1080}[index]).apply();rebuild();}).show();
-        }));
         downloads.addView(toggleRow("image", Text.NO_WATERMARK, Download.isEnabled(),
                 Download::setEnabled));
         downloads.addView(line());
         downloads.addView(toggleRow("download", Text.DOWNLOAD_ALWAYS, Download.isAlways(),
                 Download::setAlways));
-        downloads.addView(line());
-        downloads.addView(toggleRow("place", Text.SAVE_AVATARS_ON, Avatars.isEnabled(),
-                Avatars::setEnabled));
-        downloads.addView(line());
-        downloads.addView(toggleRow("star", Text.SAVE_STICKERS_ON, Stickers.isEnabled(),
-                Stickers::setEnabled));
         column.addView(wrap(downloads));
 
         column.addView(section(Text.BACKUP));
@@ -3576,7 +3567,7 @@ public class SettingsActivity extends Activity {
             case 1: return Local.of("Оформление");
             case 2: return Local.of("Профиль");
             case 3: return Local.of("Регион");
-            case 4: return Local.of("Инструменты");
+            case 4: return Local.of("Скачивание");
             case 5: return Local.of("О проекте");
             case 6: return Local.of("Плагины");
             case 7: return Local.of("Друзья и чаты");
@@ -3599,15 +3590,15 @@ public class SettingsActivity extends Activity {
 
     private View groupNavigation() {
         LinearLayout list = card();
-        String[] icons = {"palette", "group", "language", "tune", "info", "extension", "chat", "flare"};
+        String[] icons = {"palette", "group", "language", "download", "info", "extension", "chat", "flare"};
         String[] notes = {Local.of("Акцент и цвета темы"),
                 Local.of("Значки, градиент и аккаунт"),
                 Local.of("Регион TikTok и страна"),
-                Local.of("Скачивание, копии и диагностика"),
+                Local.of("Видео без водяного знака"),
                 Local.of("Версия, обновления и участники"), Local.of("Магазин и установленные"),
                 Local.of("Друзья, серии и уведомления"), Text.FUN_NOTE};
         // Shelf order on screen: what people touch daily first, the project itself last.
-        int[] shelf = {1, 3, 6};
+        int[] shelf = {1, 3, 4, 6};
         for (int n = 0; n < shelf.length; n++) {
             final int i = shelf[n];
             final int chosen = i;
@@ -3665,7 +3656,7 @@ public class SettingsActivity extends Activity {
                 current = groupOf(name);
                 // the colour of the look, the region, and the plugins: nothing else is shown
                 kept = name.equals(Text.APPEARANCE) || name.equals(Text.ACCENT) || name.equals(Text.THEME) || name.equals(Text.REGION)
-                        || name.equals(Text.COUNTRY) || name.equals(Text.PLUGINS);
+                        || name.equals(Text.COUNTRY) || name.equals(Text.PLUGINS) || name.equals(Text.DOWNLOADS);
             }
             item.setVisibility(current == settingsGroup && kept ? View.VISIBLE : View.GONE);
         }
