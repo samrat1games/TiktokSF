@@ -24,7 +24,7 @@ public final class Gallery {
 
     private Gallery() {}
 
-    public static final String FOLDER = "MargyT";
+    public static final String FOLDER = "TikTok SF";
 
     /** Returns where it landed, or null. Never throws. */
     public static String save(Context context, byte[] data, String name, String mime) {

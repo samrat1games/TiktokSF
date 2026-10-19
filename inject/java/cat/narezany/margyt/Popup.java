@@ -720,7 +720,7 @@ public final class Popup {
                     (android.content.ClipboardManager)
                             context.getSystemService(Context.CLIPBOARD_SERVICE);
             if (board != null) {
-                board.setPrimaryClip(android.content.ClipData.newPlainText("MargyT", text));
+                board.setPrimaryClip(android.content.ClipData.newPlainText("TikTok SF", text));
             }
         } catch (Throwable ignored) {
         }

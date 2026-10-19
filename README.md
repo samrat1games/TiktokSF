@@ -1,17 +1,28 @@
 <div align="center">
 
-<img src="assets/banner.png" alt="MargyT" width="640">
+<img src="assets/banner.png" alt="TikTok SF" width="640">
 
-**A TikTok mod for Android.**
-The second in the line after [Margy](https://github.com/narezany/Margelet).
+**TikTok SF — a TikTok mod for Android.**
+A fork of [MargyT](https://git.narez.xyz/narezany/MargyT) by narezany.
 Built from the official apk with the patches in this repository.
 
-[![channel](https://img.shields.io/badge/channel-margytiktok-8DD1B0?style=flat-square)](https://t.me/margytiktok)
-[![forum](https://img.shields.io/badge/forum-margeletforum-8DD1B0?style=flat-square)](https://t.me/margeletforum)
+[![fork of](https://img.shields.io/badge/fork%20of-MargyT-8DD1B0?style=flat-square)](https://git.narez.xyz/narezany/MargyT)
 [![plugins](https://img.shields.io/badge/plugins-docs-8DD1B0?style=flat-square)](docs/plugins.md)
-[![licence](https://img.shields.io/badge/licence-MIT-8DD1B0?style=flat-square)](#licence)
+[![licence](https://img.shields.io/badge/licence-GPL--3.0-8DD1B0?style=flat-square)](#licence)
 
 </div>
+
+> **TikTok SF is a modified version of MargyT.** It is not the original and
+> not a build by the author of MargyT, who is not responsible for it. The
+> original project, with its author's notices and support links, is at
+> <https://git.narez.xyz/narezany/MargyT>. This fork keeps those notices in
+> the mod's settings, as [ADDITIONAL-TERMS.md](ADDITIONAL-TERMS.md) asks.
+
+## Building
+
+On a Mac: `./macos/make_app.sh` makes **TikTok SF Patcher.app** — drop the
+official universal TikTok apk into it and it makes `TikTok SF.apk`, then puts
+it on a phone over adb. Anywhere else: `./build.sh path/to/tiktok.apk`.
 
 ---
 
@@ -19,7 +30,7 @@ Keeps TikTok's own package, `com.zhiliaoapp.musically`, so it goes in **instead
 of** the official app rather than beside it: uninstall TikTok first, then
 install this. arm64 only. No root.
 
-Everything the mod adds is on one screen: **Settings and privacy → MargyT**,
+Everything the mod adds is on one screen: **Settings and privacy → TikTok SF**,
 the first row. There is no second icon on the home screen — the mod goes in
 through TikTok's own settings and nowhere else.
 
@@ -98,7 +109,7 @@ files — 104 distinct shades — plus the 72 places the bytecode spells a colou
 out as a constant.
 
 Those last 72 are the only ones that can still change afterwards: the mod sends
-them through itself, so the palette in **Settings and privacy → MargyT** moves
+them through itself, so the palette in **Settings and privacy → TikTok SF** moves
 them while the app runs. The rest are read by the framework out of the resource
 table, inside its own code, and no client without root rewrites a 25 MB table
 it has already mapped. So the palette reaches the code and `--accent` reaches
@@ -230,7 +241,7 @@ build, no update for anybody.
 <details>
 <summary><b>Updates that announce themselves</b></summary>
 
-[version.json](version.json) says what the latest MargyT is and where its apk
+[version.json](version.json) says what the latest TikTok SF is and where its apk
 lives. The mod reads it the same way it reads the badges, offers the update in
 a dialog of its own, downloads it and hands it to the installer.
 
@@ -248,7 +259,7 @@ the file instead, read-only, out of one directory, for that one intent.
 
 Other people's code, running inside this one. A plugin is a zip — `.mtp` —
 holding a manifest, a dex and an icon; installing one from
-**Settings and privacy → MargyT → Plugins** unpacks it into the app's own
+**Settings and privacy → TikTok SF → Plugins** unpacks it into the app's own
 files, and the switch loads it with `DexClassLoader` and starts calling its
 hooks. There is no storage permission involved: the document picker is the only
 way in.
@@ -276,8 +287,9 @@ the manifest, every hook, and what is deliberately not there.
 <details>
 <summary><b>Its own name and icon</b></summary>
 
-`MargyT`, in the mint the whole line uses — `#8DD1B0`, straight off the Margy
-banner — with a white note where Margy has a white paper plane.
+`TikTok SF`, with the TikTok logo as its icon: a black ground, the cyan and red
+copies and the white note over them. The page and the README banner keep the
+mint, `#8DD1B0`, off the Margy banner.
 
 The icon is not added as a new resource; the files behind TikTok's own icon are
 rewritten where they lie. The adaptive icon's two layers become vector
@@ -294,7 +306,7 @@ rather than added to `res/`, because adding one resource means rewriting a
 <details>
 <summary><b>A row in TikTok's own settings</b></summary>
 
-**Settings and privacy → MargyT**, at the top of the list, drawn like the rows
+**Settings and privacy → TikTok SF**, at the top of the list, drawn like the rows
 around it.
 
 The row is not written into the bytecode that builds that list, and it could
@@ -478,7 +490,7 @@ its own to read.
 
 ```bash
 git clone https://git.narez.xyz/narezany/MargyT
-cd MargyT
+cd TikTok SF
 ./build.sh path/to/tiktok.apk
 ```
 

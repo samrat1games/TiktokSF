@@ -40,10 +40,6 @@ public final class Watch implements Application.ActivityLifecycleCallbacks {
             Brightness.apply(activity);
         } catch (Throwable ignored) {
         }
-        try {
-            Tester.mark(activity);
-        } catch (Throwable ignored) {
-        }
         Lag.frames(activity);
         TabBadges.attach(activity);
         NavBar.attach(activity);
@@ -52,8 +48,6 @@ public final class Watch implements Application.ActivityLifecycleCallbacks {
         } catch (Throwable ignored) {
         }
         Md3.attach(activity);
-        DepFloat.attach(activity);
-        Screamer.attach(activity);
     }
 
     @Override

@@ -114,7 +114,6 @@ public class SettingsActivity extends Activity {
     private boolean mineOpen;
     private java.util.List<Mine.Held> ordering;
     private boolean streakOpen;
-    private boolean diaryOpen;
     /** Set once the badges have been rearranged by hand and not yet saved. */
     private boolean rearranged;
     /** The card the donation button brings the screen down to. */
@@ -140,16 +139,10 @@ public class SettingsActivity extends Activity {
         // the list may still be the one cached before this screen existed, so
         // redraw when the server answers rather than waiting for a tap
         Badges.tell(badgeUpdates);
-        // a test build is only for the people who paid for it, and whether
-        // this account is one of them is a thing the server knows -- so the
-        // refusal waits for its answer rather than firing on a cold start,
-        // when the list of badges is simply not here yet
         Mine.ask(() -> {
             if (isFinishing() || isDestroyed()) return;
             rebuild();
-            if (Tester.on() && !Tester.allowed()) Tester.refuse(this);
         });
-        if (Tester.on() && Tester.asked() && !Tester.allowed()) Tester.refuse(this);
 
         ScrollView scroll = page = new ScrollView(this);
         scroll.setBackgroundColor(Color.TRANSPARENT);
@@ -228,13 +221,6 @@ public class SettingsActivity extends Activity {
             restoreScroll(0);
             return;
         }
-        if (settingsGroup == FLAGS_PAGE) {
-            column.addView(title(Text.DEV_FLAGS));
-            flagsPage();
-            showRestartBar();
-            restoreScroll(previousScroll);
-            return;
-        }
         column.addView(title(settingsGroup == 0 ? "TikTok SF" : groupName(settingsGroup)));
         if (searchQuery.length() > 0) {
             searchResults();
@@ -257,24 +243,6 @@ public class SettingsActivity extends Activity {
             icons.addView(appear(iconChoices()));
         }
         column.addView(wrap(icons));
-
-        column.addView(section(BANNER));
-        LinearLayout banner = card();
-        banner.addView(actionRow("image", Local.of("Фото, GIF или видео с телефона"),
-                ProfileBanner.has(this) ? Local.of("Баннер установлен") : Local.of("Баннера нет"), () -> {
-            pickBanner();
-        }));
-        banner.addView(line());
-        banner.addView(actionRow("link", Local.of("По ссылке на видео TikTok"),
-                Local.of("Вставьте ссылку из кнопки «Поделиться»"), this::bannerFromLink));
-        if (ProfileBanner.has(this)) {
-            banner.addView(line());
-            banner.addView(actionRow("block", Local.of("Убрать баннер"), null, () -> {
-                ProfileBanner.remove(this);
-                rebuild();
-            }));
-        }
-        column.addView(wrap(banner));
 
         column.addView(section(Text.ACCENT));
         LinearLayout accent = card();
@@ -590,22 +558,7 @@ public class SettingsActivity extends Activity {
         LinearLayout diagnostics = card();
         diagnostics.addView(liveToggleRow("bug_report", Local.of("Отчёты о сбоях"),CrashReports.enabled(this),on->CrashReports.set(this,on)));
         diagnostics.addView(quiet(Local.of("Отправлять разработчику технический стек сбоя. Без сообщений, аккаунта и текста ошибки.")));
-        diagnostics.addView(quiet(Diagnostics.report()));
-        diagnostics.addView(line());
-        diagnostics.addView(actionRow("article", Text.COPY_DIAGNOSTICS, null,
-                () -> copy("MargyT diagnostics", DevMode.isOn()
-                        ? Diagnostics.fullReport() : Diagnostics.report())));
         column.addView(wrap(diagnostics));
-
-        column.addView(section(Text.DIARY));
-        LinearLayout diary = card();
-        diary.addView(diaryHead());
-        if (diaryOpen) {
-            diary.addView(line());
-            diary.addView(appear(diaryLines()));
-        }
-        if (DevMode.isOn()) addDeveloperRows(diary);
-        column.addView(wrap(diary));
 
         column.addView(section(Text.THANKS));
         LinearLayout support = card();
@@ -618,93 +571,11 @@ public class SettingsActivity extends Activity {
         donateAnchor = wrap(support);
         column.addView(donateAnchor);
 
-        column.addView(section(Text.FUN_DEP));
-        LinearLayout dep = card();
-        dep.addView(chipRow("flare", Text.FUN_DEP, new String[] {Text.CHIP_TEMPORARY, Text.CHIP_COLLAB},
-                this::openDep));
-        dep.addView(quiet(Text.DEP_NOTE));
-        dep.addView(line());
-        dep.addView(liveToggleRow("open_with", Text.DEP_FLOAT, DepFloat.isOn(this),
-                on -> DepFloat.set(this, on)));
-        column.addView(wrap(dep));
-
-        column.addView(section(Text.FUN_SCREAMERS));
-        LinearLayout screamers = card();
-        screamers.addView(liveToggleRow("animation", Text.FUN_SCREAMERS, Screamer.isOn(this),
-                on -> Screamer.set(this, on)));
-        screamers.addView(quiet(Text.SCREAMERS_NOTE));
-        screamers.addView(line());
-        screamers.addView(liveToggleRow("volume_up", Text.SCREAMER_SOUND, Screamer.loud(this),
-                on -> Screamer.setLoud(this, on)));
-        screamers.addView(line());
-        screamers.addView(actionRow("play_arrow", Text.SCREAMER_NOW, null, () -> Screamer.now(this)));
-        column.addView(wrap(screamers));
-
-        column.addView(section(Text.FUN_CAT));
-        column.addView(fatCat());
-
         filterGroup();
 
         showRestartBar();
         restoreScroll(previousScroll);
     }
-
-    /**
-     * The calculator, for an account that has proved itself. The coins are
-     * the server's and are kept by account, so an account that anybody could
-     * claim to be would have its coins staked by anybody.
-     */
-    private void openDep() {
-        if (DepGame.verified()) {
-            DepCalc.show(this, skin);
-            return;
-        }
-        Panel.with(this, skin, Text.DEP_PROVE)
-                .text(Text.DEP_PROVE_WHY)
-                .primary(Text.PROVE, this::proveAccount)
-                .quiet(Text.CANCEL, null)
-                .show();
-    }
-
-    /** The fat tilcayo, as wide as the screen will have him. */
-    private View fatCat() {
-        final ImageView cat = new ImageView(this);
-        cat.setAdjustViewBounds(true);
-        cat.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        cat.setContentDescription(Text.FUN_CAT);
-        GradientDrawable round = new GradientDrawable();
-        round.setColor(skin.card);
-        round.setCornerRadius(dp(28));
-        cat.setBackground(round);
-        cat.setClipToOutline(true);
-        cat.setMinimumHeight(dp(160));
-        if (fatCatPicture != null) {
-            cat.setImageBitmap(fatCatPicture);
-        } else {
-            final Context app = getApplicationContext();
-            Net.away("fat cat", () -> {
-                try {
-                    byte[] raw = Cats.fat(app);
-                    if (raw == null) return;
-                    final android.graphics.Bitmap picture =
-                            android.graphics.BitmapFactory.decodeByteArray(raw, 0, raw.length);
-                    runOnUiThread(() -> {
-                        fatCatPicture = picture;
-                        if (picture != null && cat.isAttachedToWindow()) cat.setImageBitmap(picture);
-                    });
-                } catch (Throwable error) {
-                    Diary.note("fat cat: " + error);
-                }
-            });
-        }
-        LinearLayout box = new LinearLayout(this);
-        box.setPadding(dp(12), 0, dp(12), dp(6));
-        box.addView(cat, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        return box;
-    }
-
-    private static android.graphics.Bitmap fatCatPicture;
 
     /** A row that opens something, with a word or two beside its name saying what kind of thing it is. */
     private View chipRow(String picture, String title, String[] chips, final Runnable action) {
@@ -848,30 +719,6 @@ public class SettingsActivity extends Activity {
      * The first thing on the screen, and the only thing here that asks for
      * something. Short, because a long one is an advertisement.
      */
-    /** A link to a post, pasted, becomes the banner. */
-    private void bannerFromLink() {
-        Panel panel = Panel.with(this, skin, Local.of("Баннер по ссылке"));
-        panel.text(Local.of("Откройте видео в TikTok, нажмите «Поделиться → Скопировать ссылку» и вставьте её сюда."));
-        final android.widget.EditText field = panel.field("https://vm.tiktok.com/…");
-        try {
-            android.content.ClipboardManager clips = (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-            if (clips != null && clips.hasPrimaryClip() && clips.getPrimaryClip().getItemCount() > 0) {
-                CharSequence pasted = clips.getPrimaryClip().getItemAt(0).coerceToText(this);
-                if (pasted != null && pasted.toString().contains("tiktok.com")) field.setText(pasted);
-            }
-        } catch (Throwable ignored) {
-        }
-        panel.primary(Local.of("Сделать баннером"), () -> {
-            String link = field.getText().toString();
-            if (BannerLink.find(link) == null) {
-                Toast.makeText(this, Local.of("Это не ссылка"), Toast.LENGTH_SHORT).show();
-                return;
-            }
-            ProfileBanner.fromLink(this, link, this::rebuild);
-        });
-        panel.quiet(Text.CLOSE, null).show();
-    }
-
     private View donateBanner() {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
@@ -1071,7 +918,7 @@ public class SettingsActivity extends Activity {
 
     private LinearLayout gradientCard() {
         LinearLayout card = card();
-        if (!Mine.holds(Tester.SUPPORTER)) {
+        if (!Mine.holds("supporter")) {
             card.addView(actionRow("gradient", Text.GRADIENT, null, () -> {}));
             card.addView(caption(Text.GRADIENT_ONLY));
             return card;
@@ -1816,7 +1663,6 @@ public class SettingsActivity extends Activity {
         intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {"image/*", "video/*"});
         startActivityForResult(intent, PICK_BANNER);
     }
-    private static final String BANNER = Local.of("Баннер профиля");
     private static final int PICK_EMOJI = 0x4D45;  // "ME"
     private static final int PICK_PROFILE_BADGE = 0x5450; // "TP"
 
@@ -2810,6 +2656,7 @@ public class SettingsActivity extends Activity {
         rows.setOrientation(LinearLayout.VERTICAL);
         rows.setPadding(0, dp(6), 0, dp(10));
 
+        rows.addView(quiet(Text.MODIFIED));
         rows.addView(quiet(Text.THANKS_NOTE));
         rows.addView(owner());
         rows.addView(person("Claude Opus 5", Text.THANKS_CLAUDE, null));
@@ -2943,35 +2790,6 @@ public class SettingsActivity extends Activity {
         }
     }
 
-    /** Five taps in a row on the heading switch the developer tools on. */
-    private void developerTap() {
-        if (!DevMode.tapped()) return;
-        if (DevMode.isOn()) {
-            Toast.makeText(this, Text.DEV_ALREADY, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        DevMode.set(true);
-        Diary.note("developer mode on");
-        Toast.makeText(this, Text.DEV_ON, Toast.LENGTH_SHORT).show();
-        rebuild();
-    }
-
-    /** Under the diary: the full report to copy, TikTok's flags, and the way back out. */
-    private void addDeveloperRows(LinearLayout into) {
-        into.addView(line());
-        into.addView(actionRow("tune", Text.DEV_FLAGS, Text.DEV_FLAGS_NOTE, this::showFlags));
-        into.addView(line());
-        into.addView(actionRow("article", Text.DEV_FULL_REPORT, Text.DEV_FULL_NOTE,
-                () -> copy("MargyT full report", Diagnostics.fullReport())));
-        into.addView(line());
-        into.addView(toggleRow("tune", Text.DEV_SWITCH, true, on -> {
-            if (!on) {
-                DevMode.set(false);
-                rebuildAfterSwitchAnimation();
-            }
-        }));
-    }
-
     /** Every shape as a picture of itself, four to a row. */
     private void chooseAvatarShape() {
         final Panel panel = Panel.with(this, skin, Text.AVATAR_SHAPE);
@@ -3016,330 +2834,12 @@ public class SettingsActivity extends Activity {
 
     // ------------------------------------------------------ TikTok's flags
 
-    private static final int FLAGS_PAGE = 98;
     /** How many rows a search shows. There are twenty thousand flags and a row is a view. */
     private static final int FLAG_ROWS = 60;
 
     private String flagQuery = "";
     private java.util.List<Flags.Known> flagList;
     private boolean flagsLoading;
-
-    private void showFlags() {
-        settingsGroup = FLAGS_PAGE;
-        searchQuery = "";
-        flagQuery = "";
-        page.scrollTo(0, 0);
-        rebuild();
-    }
-
-    /**
-     * Every flag TikTok declares, to look up and to answer differently.
-     *
-     * Nothing is listed until something is typed, bar what has already been
-     * changed: the list is twenty thousand names long, and the one somebody
-     * came for is found by a piece of its name or not at all.
-     */
-    private void flagsPage() {
-        LinearLayout warning = card();
-        warning.addView(quiet(Text.FLAGS_WARNING));
-        column.addView(wrap(warning));
-
-        final java.util.Map<String, Object> mine = Flags.overrides();
-        if (FlagGuard.heldBack() && !mine.isEmpty()) {
-            LinearLayout held = card();
-            held.addView(quiet(Text.FLAGS_HELD));
-            held.addView(actionRow("restore", Text.FLAGS_AGAIN, null, () -> {
-                FlagGuard.again();
-                Flags.forget();
-                restartOwed();
-                rebuild();
-            }));
-            column.addView(wrap(held));
-        }
-
-        if (flagList == null) {
-            LinearLayout wait = card();
-            wait.addView(quiet(Text.FLAGS_LOADING));
-            column.addView(wrap(wait));
-            if (flagsLoading) return;
-            flagsLoading = true;
-            // the list is built by a class initialiser the size of a small
-            // book, and that is not something to wait for with a finger down
-            new Thread(() -> {
-                final java.util.List<Flags.Known> all = Flags.catalogue();
-                runOnUiThread(() -> {
-                    flagList = all;
-                    flagsLoading = false;
-                    if (settingsGroup == FLAGS_PAGE && !isFinishing()) rebuild();
-                });
-            }, "margyt-flags").start();
-            return;
-        }
-
-        column.addView(flagSearch());
-
-        java.util.List<Flags.Known> shown = new java.util.ArrayList<Flags.Known>();
-        int found = 0;
-        for (Flags.Known flag : flagList) {
-            boolean wanted = flagQuery.length() == 0 ? mine.containsKey(flag.key)
-                    : flag.key.toLowerCase(Locale.ROOT).contains(flagQuery);
-            if (!wanted) continue;
-            found++;
-            if (shown.size() < FLAG_ROWS) shown.add(flag);
-        }
-
-        column.addView(section(flagQuery.length() == 0 ? Text.FLAGS_CHANGED
-                : String.format(Locale.ROOT, Text.FLAGS_FOUND, found)));
-        LinearLayout list = card();
-        if (flagList.isEmpty()) list.addView(quiet(Text.FLAGS_NO_LIST));
-        else if (shown.isEmpty()) list.addView(quiet(flagQuery.length() == 0
-                ? String.format(Locale.ROOT, Text.FLAGS_NONE_CHANGED, flagList.size())
-                : Text.NOTHING_FOUND));
-        for (int i = 0; i < shown.size(); i++) {
-            if (i > 0) list.addView(line());
-            list.addView(flagRow(shown.get(i), mine.get(shown.get(i).key)));
-        }
-        if (found > shown.size()) {
-            list.addView(quiet(String.format(Locale.ROOT, Text.FLAGS_MORE, shown.size())));
-        }
-        column.addView(wrap(list));
-
-        if (!mine.isEmpty()) {
-            column.addView(wrap(actionRow("restore", Text.FLAGS_RESET_ALL, null, () -> {
-                Flags.clearOverrides();
-                restartOwed();
-                rebuild();
-            })));
-        }
-    }
-
-    private View flagSearch() {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(20), dp(4), dp(8), dp(4));
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(skin.card);
-        background.setCornerRadius(dp(28));
-        row.setBackground(background);
-
-        final EditText input = new EditText(this);
-        input.setSingleLine(true);
-        input.setText(flagQuery);
-        input.setHint(Text.FLAGS_SEARCH);
-        input.setHintTextColor(skin.muted());
-        input.setTextColor(skin.text);
-        input.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        input.setTypeface(Typeface.MONOSPACE);
-        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT
-                | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-        input.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-        input.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
-        final Runnable look = () -> {
-            flagQuery = input.getText().toString().trim().toLowerCase(Locale.ROOT);
-            page.scrollTo(0, 0);
-            rebuild();
-        };
-        input.setOnEditorActionListener((view, action, event) -> {
-            if (action != EditorInfo.IME_ACTION_SEARCH) return false;
-            look.run();
-            return true;
-        });
-        row.addView(input, grow());
-
-        TextView go = label(flagQuery.length() == 0 ? Text.SEARCH : Text.SEARCH_CLEAR);
-        go.setTextColor(accentInk());
-        go.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        go.setGravity(Gravity.CENTER);
-        go.setPadding(dp(16), 0, dp(16), 0);
-        go.setBackground(Expressive.tile(this, accentTonal(), (Accent.colour() & 0xFFFFFF) | 0x33000000,
-                dp(20), dp(20), dp(10)));
-        go.setOnClickListener(v -> {
-            if (flagQuery.length() > 0) input.setText("");
-            look.run();
-        });
-        row.addView(go, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(40)));
-        LinearLayout box = new LinearLayout(this);
-        box.setPadding(dp(12), dp(4), dp(12), dp(8));
-        box.addView(sized(row, 56));
-        return box;
-    }
-
-    /** A flag: its name, its type, what TikTok says and, if it differs, what is said here. */
-    private View flagRow(final Flags.Known flag, final Object mine) {
-        LinearLayout row = row();
-        row.setPadding(dp(16), dp(10), dp(16), dp(10));
-        LinearLayout words = new LinearLayout(this);
-        words.setOrientation(LinearLayout.VERTICAL);
-        TextView name = label(flag.key);
-        name.setTypeface(Typeface.MONOSPACE);
-        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        words.addView(name);
-
-        final Object own = flag.settable() ? Flags.own(flag) : null;
-        final Object theirs = own != null ? own : flag.fallback;
-        String says = flag.type.toLowerCase(Locale.ROOT) + "  ·  TikTok: " + flagValue(theirs);
-        if (mine != null) says += "  ·  " + Text.FLAGS_HERE + ": " + flagValue(mine);
-        TextView about = detail(says);
-        about.setPadding(0, dp(4), 0, 0);
-        if (mine != null) about.setTextColor(accentInk());
-        words.addView(about);
-        row.addView(words, grow());
-        row.setOnClickListener(v -> editFlag(flag, theirs, mine));
-        return sized(row, 56);
-    }
-
-    private static String flagValue(Object value) {
-        if (value == null) return "—";
-        String text = value instanceof Object[] ? java.util.Arrays.toString((Object[]) value)
-                : String.valueOf(value);
-        if (value instanceof String) text = '"' + text + '"';
-        return text.length() > 48 ? text.substring(0, 48) + "…" : text;
-    }
-
-    private void editFlag(final Flags.Known flag, Object theirs, Object mine) {
-        if (!flag.settable()) {
-            Toast.makeText(this, Text.FLAGS_FIXED, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        final Panel panel = Panel.with(this, skin, flag.key);
-        if (flag.type.equals("BOOLEAN")) {
-            panel.option(Text.FLAGS_AS_TIKTOK + " (" + flagValue(theirs) + ")", mine == null, false,
-                    () -> answerFlag(flag, null));
-            panel.option(Text.FLAGS_ON, Boolean.TRUE.equals(mine), false,
-                    () -> answerFlag(flag, Boolean.TRUE));
-            panel.option(Text.FLAGS_OFF, Boolean.FALSE.equals(mine), false,
-                    () -> answerFlag(flag, Boolean.FALSE));
-            panel.quiet(Text.CLOSE, null);
-            panel.show();
-            return;
-        }
-        panel.text(flag.type.toLowerCase(Locale.ROOT) + "  ·  TikTok: " + flagValue(theirs));
-        final EditText input = panel.field(String.valueOf(theirs));
-        Object now = mine != null ? mine : theirs;
-        if (now != null) input.setText(String.valueOf(now));
-        if (!flag.type.equals("STRING")) {
-            input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
-                    | android.text.InputType.TYPE_NUMBER_FLAG_SIGNED
-                    | (flag.type.equals("FLOAT") || flag.type.equals("DOUBLE")
-                            ? android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL : 0));
-        }
-        panel.primaryKeepOpen(Text.APPLY, () -> {
-            Object value = Flags.parse(flag, input.getText().toString());
-            if (value == null) {
-                Screen.say(Text.FLAGS_BAD);
-                return;
-            }
-            panel.close();
-            answerFlag(flag, value);
-        });
-        if (mine != null) panel.quiet(Text.FLAGS_RESET, () -> answerFlag(flag, null));
-        panel.quiet(Text.CLOSE, null);
-        panel.show();
-    }
-
-    private void answerFlag(Flags.Known flag, Object value) {
-        Flags.override(flag, value);
-        Diary.note("flag " + flag.key + " = " + (value == null ? "TikTok's own" : value));
-        // nearly every flag is read once and remembered, so it takes a restart
-        restartOwed();
-        rebuild();
-    }
-
-    /** The whole report, monospaced, so columns line up and it reads like a log. */
-    private View fullReportView() {
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(16), dp(8), dp(16), dp(12));
-        TextView view = new TextView(this);
-        view.setText(Diagnostics.fullReport());
-        view.setTextColor(skin.muted());
-        view.setTypeface(Typeface.MONOSPACE);
-        view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
-        view.setTextIsSelectable(true);
-        box.addView(view);
-        return box;
-    }
-
-    private View diaryHead() {
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-
-        // The title gets the whole row; the two actions sit on a line of their own,
-        // otherwise the long words squeeze the title down to one letter per line.
-        LinearLayout row = row();
-        row.addView(icon("article"));
-        TextView title = label(Text.DIARY_TITLE);
-        title.setSingleLine(true);
-        title.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        row.addView(title, grow());
-        row.addView(disclosure(diaryOpen,"diaryOpen"));
-        row.setOnClickListener(v -> {
-            disclosureKey = "diaryOpen";
-            diaryOpen = !diaryOpen;
-            rebuildAfterReveal(diaryOpen);
-        });
-        box.addView(sized(row, 52));
-
-        LinearLayout actions = new LinearLayout(this);
-        actions.setOrientation(LinearLayout.HORIZONTAL);
-        actions.setPadding(dp(16), 0, dp(16), dp(8));
-
-        TextView copy = diaryAction(Text.COPY);
-        copy.setOnClickListener(v -> copyDiary());
-        actions.addView(copy, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-        TextView clear = diaryAction(Text.CLEAR);
-        clear.setOnClickListener(v -> {
-            Diary.clear();
-            Toast.makeText(this, Text.CLEARED, Toast.LENGTH_SHORT).show();
-            rebuild();
-        });
-        LinearLayout.LayoutParams clearWhere = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        clearWhere.leftMargin = dp(8);
-        actions.addView(clear, clearWhere);
-        box.addView(actions, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        return box;
-    }
-
-    private TextView diaryAction(String text) {
-        TextView action = new TextView(this);
-        action.setText(text);
-        action.setTextColor(Accent.colour());
-        action.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        action.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        action.setGravity(Gravity.CENTER);
-        action.setSingleLine(true);
-        action.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        action.setPadding(dp(12), dp(10), dp(12), dp(10));
-        action.setMinHeight(dp(44));
-        action.setClickable(true);
-        action.setFocusable(true);
-        GradientDrawable pill = new GradientDrawable();
-        pill.setCornerRadius(dp(22));
-        pill.setColor((Accent.colour() & 0xFFFFFF) | 0x1F000000);
-        action.setBackground(pill);
-        Motion.press(action);
-        return action;
-    }
-
-    private View diaryLines() {
-        if (DevMode.isOn()) return fullReportView();
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(16), dp(8), dp(16), dp(12));
-        for (String entry : Diary.lines()) {
-            TextView view = new TextView(this);
-            view.setText(entry);
-            view.setTextColor(skin.muted());
-            view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
-            view.setPadding(0, dp(2), 0, 0);
-            box.addView(view);
-        }
-        return box;
-    }
 
     /**
      * Start TikTok over, so everything is drawn again in the new colour.
@@ -3357,20 +2857,6 @@ public class SettingsActivity extends Activity {
             startActivity(intent);
             finish();
             Runtime.getRuntime().exit(0);
-        } catch (Throwable error) {
-            Toast.makeText(this, String.valueOf(error), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private void copyDiary() {
-        try {
-            StringBuilder out = new StringBuilder("MargyT\n");
-            if (DevMode.isOn()) out.append(Diagnostics.fullReport());
-            else for (String line : Diary.lines()) out.append(line).append('\n');
-            ClipboardManager clipboard =
-                    (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-            clipboard.setPrimaryClip(ClipData.newPlainText("MargyT", out.toString()));
-            Toast.makeText(this, Text.COPIED, Toast.LENGTH_SHORT).show();
         } catch (Throwable error) {
             Toast.makeText(this, String.valueOf(error), Toast.LENGTH_LONG).show();
         }
@@ -3407,11 +2893,6 @@ public class SettingsActivity extends Activity {
         view.setTextSize(TypedValue.COMPLEX_UNIT_SP, settingsGroup == 0 ? 44 : 34);
         view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         view.setPadding(dp(28), dp(8), dp(24), dp(16));
-        // five taps in a row and a cat turns up; one by accident does nothing
-        view.setOnClickListener(v -> {
-            Cats.tapped(view);
-            developerTap();
-        });
         return view;
     }
 
@@ -3640,7 +3121,6 @@ public class SettingsActivity extends Activity {
             case 5: return Local.of("О проекте");
             case 6: return Local.of("Плагины");
             case 7: return Local.of("Друзья и чаты");
-            case 8: return Text.FUN;
             default: return "TikTok SF";
         }
     }
@@ -3651,21 +3131,20 @@ public class SettingsActivity extends Activity {
                 Local.of("Глаз меняет прозрачность кнопок поверх видео; «Защита экрана» теперь здесь же. Удержание «Отправить» открывает скачивание и перемотку. Удерживайте край видео, чтобы ускорить, и потяните вниз, чтобы закрепить скорость."),
                 Local.of("Скачивание, резервные копии, диагностика и журнал. Сохраните копию перед экспериментами."),
                 Local.of("Здесь находятся версия мода, обновления, журнал и участники."), Local.of("Магазин, установка и настройки плагинов. Плагины запускают дополнительный код; устанавливайте только те, которым доверяете."),
-                Local.of("Закреплённые друзья, автопродление серий и уведомления мода."),
-                Text.FUN_HELP};
+                Local.of("Закреплённые друзья, автопродление серий и уведомления мода.")};
         Panel.with(this,skin,Local.of("Подсказки")).text(notes[Math.max(0,Math.min(notes.length-1,settingsGroup))])
                 .quiet(Local.of("Обучение"),() -> Tutorial.show(this)).primary(Local.of("Понятно"),null).show();
     }
 
     private View groupNavigation() {
         LinearLayout list = card();
-        String[] icons = {"palette", "group", "language", "download", "info", "extension", "chat", "flare"};
+        String[] icons = {"palette", "group", "language", "download", "info", "extension", "chat"};
         String[] notes = {Local.of("Акцент и цвета темы"),
                 Local.of("Значки, градиент и аккаунт"),
                 Local.of("Регион TikTok и страна"),
                 Local.of("Видео без водяного знака"),
                 Local.of("Версия, обновления и участники"), Local.of("Магазин и установленные"),
-                Local.of("Друзья, серии и уведомления"), Text.FUN_NOTE};
+                Local.of("Друзья, серии и уведомления")};
         // Shelf order on screen: what people touch daily first, the project itself last.
         int[] shelf = {1, 3, 4, 6};
         for (int n = 0; n < shelf.length; n++) {
@@ -3692,13 +3171,9 @@ public class SettingsActivity extends Activity {
 
     /**
      * Which shelf a section lives on.
-     * 1 look, 2 profile, 3 feed and video, 4 tools, 5 about, 6 plugins, 7 friends and chats,
-     * 8 the things that are for nothing.
+     * 1 look, 2 profile, 3 feed and video, 4 tools, 5 about, 6 plugins, 7 friends and chats.
      */
     private int groupOf(String section) {
-        if (section.equals(Text.FUN_DEP) || section.equals(Text.FUN_SCREAMERS)
-                || section.equals(Text.FUN_CAT)) return 8;
-        if (section.equals(BANNER)) return 1;
         if (section.equals(Text.PLUGINS)) return 6;
         if (section.equals(Text.GRADIENT) || section.equals(Text.BADGES) || section.equals(Text.ACCOUNT)) return 2;
         if (section.equals(Text.APPEARANCE) || section.equals(Text.ACCENT)
@@ -3713,7 +3188,7 @@ public class SettingsActivity extends Activity {
                 || section.equals(Text.NOTIFICATIONS)) return 7;
         if (section.equals(Text.THANKS) || section.equals(Text.UPDATE) || section.equals(Text.CHANNEL)
                 || section.equals(Text.LINKS)) return 5;
-        return 4; // downloads, backup, diagnostics, diary
+        return 4; // downloads, backup, crash reports
     }
 
     private void filterGroup() {
@@ -3725,7 +3200,7 @@ public class SettingsActivity extends Activity {
                 String name = ((TextView) item).getText().toString();
                 current = groupOf(name);
                 // the colour of the look, the region, and the plugins: nothing else is shown
-                kept = name.equals(Text.APPEARANCE) || name.equals(BANNER) || name.equals(Text.ACCENT) || name.equals(Text.THEME) || name.equals(Text.REGION)
+                kept = name.equals(Text.APPEARANCE) || name.equals(Text.ACCENT) || name.equals(Text.THEME) || name.equals(Text.REGION)
                         || name.equals(Text.COUNTRY) || name.equals(Text.PLUGINS) || name.equals(Text.DOWNLOADS);
             }
             item.setVisibility(current == settingsGroup && kept ? View.VISIBLE : View.GONE);
@@ -3739,9 +3214,7 @@ public class SettingsActivity extends Activity {
         if(navigating)return;
         if (searchQuery.length() > 0) { searchQuery = ""; rebuild(); }
         else if (settingsGroup != 0) {
-            // the flags are reached from the tools, so that is where back leads
-            final int to = settingsGroup == FLAGS_PAGE ? 4 : 0;
-            navigating=true;Motion.navigate(column,-1f,()->{settingsGroup=to;rebuild();navigating=false;});
+            navigating=true;Motion.navigate(column,-1f,()->{settingsGroup=0;rebuild();navigating=false;});
         }
         else finish();
     }

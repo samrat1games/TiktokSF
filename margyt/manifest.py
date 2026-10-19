@@ -333,29 +333,6 @@ def add_activity(axml: Axml, class_name: str, label: str, theme: int,
     axml.insert_into(application(axml), subtree)
 
 
-def add_widget(axml: Axml, class_name: str, info: int) -> None:
-    """Declare a home-screen widget: a receiver, and where its description is.
-
-    The launcher finds widgets by the one broadcast they all answer, and reads
-    what a widget is from the resource the meta-data points at. It is another
-    app doing the asking, so this receiver is exported where the alarm's is
-    not.
-    """
-    receiver = axml.make_element("receiver")
-    axml.set_attr_string(receiver, "name", class_name)
-    axml.set_attr_bool(receiver, "exported", True)
-    intent_filter = axml.make_element("intent-filter")
-    action = axml.make_element("action")
-    axml.set_attr_string(action, "name", "android.appwidget.action.APPWIDGET_UPDATE")
-    meta = axml.make_element("meta-data")
-    axml.set_attr_string(meta, "name", "android.appwidget.provider")
-    axml.set_attr_ref(meta, "resource", info)
-    axml.insert_into(application(axml), [
-        receiver, intent_filter, action, axml.close_element(action),
-        axml.close_element(intent_filter), meta, axml.close_element(meta),
-        axml.close_element(receiver)])
-
-
 def add_receiver(axml: Axml, class_name: str, actions: List[str]) -> None:
     """Declare a receiver that only the system (and the app itself) can reach.
 

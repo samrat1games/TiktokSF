@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Render assets/banner.png.
 
-Same layout and palette as the Margy banner: mint field, white glyph on the
-left inside a faint rounded outline, wordmark and subtitle on the right.
-The glyph is a beamed note rather than a paper plane -- same family, different
-app.
+Same layout and palette as the Margy banner: mint field, the app icon on the
+left, wordmark and subtitle on the right.
 """
 
 import pathlib
@@ -22,32 +20,23 @@ WHITE = (255, 255, 255)
 BOLD = "/usr/share/fonts/noto/NotoSans-Bold.ttf"
 REGULAR = "/usr/share/fonts/noto/NotoSans-Regular.ttf"
 
-WORDMARK = "MargyT"
+WORDMARK = "TikTok SF"
 SUBTITLE = "a TikTok mod for Android"
 
 
-def note(draw, cx, cy, scale):
-    """Beamed eighth note, same geometry as the launcher icon."""
-
-    def p(x, y):
-        return (cx + (x - 54) * scale, cy + (y - 53) * scale)
-
-    for hx, hy in ((37, 76), (71, 68)):
-        draw.ellipse([p(hx - 11, hy - 8), p(hx + 11, hy + 8)], fill=WHITE)
-    draw.polygon([p(42, 30), p(48, 30), p(48, 76), p(42, 76)], fill=WHITE)
-    draw.polygon([p(76, 22), p(82, 22), p(82, 68), p(76, 68)], fill=WHITE)
-    draw.polygon([p(42, 30), p(82, 22), p(82, 34), p(42, 42)], fill=WHITE)
+def logo(im, box):
+    """The app icon, where the outlined glyph used to be."""
+    size = box[2] - box[0]
+    tile = Image.open(HERE.parent / "icon_out" / "margyt-1024.png").resize((size, size), Image.LANCZOS)
+    im.paste(Image.new("RGB", (size, size), MINT), box[:2])
+    im.paste(tile, box[:2], tile)
 
 
 def main():
     im = Image.new("RGB", (W, H), MINT)
     d = ImageDraw.Draw(im)
 
-    # faint rounded outline around the glyph, as on the Margy banner
-    d.rounded_rectangle(
-        [65, 32, 250, 217], radius=58, outline=(0x9E, 0xD8, 0xBC), width=2
-    )
-    note(d, 157, 124, 0.95)
+    logo(im, (65, 32, 250, 217))
 
     wordmark = ImageFont.truetype(BOLD, 82)
     subtitle = ImageFont.truetype(REGULAR, 30)

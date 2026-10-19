@@ -127,7 +127,7 @@ final class DateInfo {
         return () -> {
             try {
                 ClipboardManager board = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-                if (board != null) board.setPrimaryClip(ClipData.newPlainText("MargyT", text));
+                if (board != null) board.setPrimaryClip(ClipData.newPlainText("TikTok SF", text));
                 Screen.say(Text.COPIED);
             } catch (Throwable error) {
                 Diary.note("date copy: " + error);

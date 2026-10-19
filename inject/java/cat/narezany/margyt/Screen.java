@@ -359,7 +359,7 @@ public final class Screen {
         MAIN.postDelayed(()->{if(bar==finished && progressLine==null){if(Motion.enabled(owner)){Dialog n=noteDialog;if(n!=null&&n.getWindow()!=null)n.getWindow().getDecorView().animate().alpha(0).setDuration(180L).start();mark.animate().alpha(0).setDuration(180L).withEndAction(()->{if(bar==finished && progressLine==null)hideProgressWindow();}).start();}else hideProgressWindow();}},hold);
     }
 
-    /** "Saved to Music/MargyT" in a small pill right under the check. */
+    /** "Saved to Music/TikTok SF" in a small pill right under the check. */
     private static void showNote(final Activity owner,final Dialog finished,final String where){
         try{
             Dialog dialog=new Dialog(owner);Window window=dialog.getWindow();if(window==null)return;

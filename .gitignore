@@ -20,3 +20,10 @@ vendor/
 __pycache__/
 *.pyc
 tools/jadx/
+
+# Gradle experiment and the macOS app that is built from macos/
+patcher/
+macos/dist/
+.DS_Store
+*.apk
+*.idsig

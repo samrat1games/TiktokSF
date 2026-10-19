@@ -110,8 +110,8 @@ class Icon:
             return
         for value in values:
             if value.kind in COLOUR_TYPES:
-                self.arsc.set_value(value, value.kind, artwork.MINT)
-                self.log.append("    <%s> a colour, repainted mint" % layer)
+                self.arsc.set_value(value, value.kind, artwork.BACKDROP)
+                self.log.append("    <%s> a colour, repainted black" % layer)
                 continue
             path = self.arsc.file_path(value)
             if path is None:

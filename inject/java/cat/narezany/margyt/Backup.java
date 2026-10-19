@@ -43,7 +43,6 @@ public final class Backup {
             Comments.KEY_COPY,
             Flags.KEY_VOICE, Flags.KEY_BANNER, Flags.KEY_SPEED_LOCK,
             Flags.KEY_COMMENT_REPOST, Flags.KEY_SELF_REPOST, Flags.KEY_NEW_PROFILE, AvatarShape.KEY,
-            Screamer.KEY, Screamer.KEY_SOUND, DepGame.KEY_FLOAT,
             Streaks.KEY_ON, Streaks.KEY_MODE, Streaks.KEY_TEXT,
             Updater.KEY_REMIND
     };

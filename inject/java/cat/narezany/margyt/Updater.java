@@ -223,7 +223,7 @@ public final class Updater {
         final Context context=caller.getApplicationContext();
         final String url=where;
         final File apk = file(context);
-        final DownloadTasks.Control control=DownloadTasks.begin("update",Local.of("Обновление MargyT"),Local.of("Мод"),()->fetch(context));
+        final DownloadTasks.Control control=DownloadTasks.begin("update",Local.of("Обновление TikTok SF"),Local.of("Мод"),()->fetch(context));
         Net.away("update apk", new Runnable() {
             @Override
             public void run() {

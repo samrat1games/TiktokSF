@@ -1,5 +1,5 @@
 {
-  "_comment": "Badges MargyT draws after a name. The app reads this file from the repository at startup and every five minutes, so a badge is added by editing it here -- no new build, no update.",
+  "_comment": "Badges TikTok SF draws after a name. The app reads this file from the repository at startup and every five minutes, so a badge is added by editing it here -- no new build, no update.",
   "_fields": {
     "id": "anything, as long as it is unique",
     "users": "TikTok account ids, the numeric ones that do not change with the username",
@@ -17,10 +17,10 @@
         "7551880794956989495"
       ],
       "colour": "8DD1B0",
-      "title": "MargyT",
-      "text": "The owner of Margy and MargyT",
-      "text_ru": "Владелец Margy и MargyT",
-      "text_uk": "Власник Margy і MargyT",
+      "title": "TikTok SF",
+      "text": "The owner of Margy and TikTok SF",
+      "text_ru": "Владелец Margy и TikTok SF",
+      "text_uk": "Власник Margy і TikTok SF",
       "button": "Got it",
       "button_ru": "Понятно",
       "button_uk": "Зрозуміло"
@@ -31,8 +31,8 @@
         "6525428607760733199"
       ],
       "colour": "64B5F6",
-      "title": "MargyT",
-      "text": "помог с разработкой MargyT",
+      "title": "TikTok SF",
+      "text": "помог с разработкой TikTok SF",
       "button": "Got it",
       "button_ru": "Понятно",
       "button_uk": "Зрозуміло"
@@ -43,7 +43,7 @@
         "7547438221832160262"
       ],
       "colour": "E57373",
-      "title": "MargyT",
+      "title": "TikTok SF",
       "text": "мемодел, хайпует плесень",
       "button": "Got it",
       "button_ru": "Понятно",
@@ -66,10 +66,10 @@
         "7307204820577387525"
       ],
       "colour": "B388FF",
-      "title": "MargyT",
-      "text": "drew an icon MargyT ships with",
-      "text_ru": "нарисовал иконку, которая есть в MargyT",
-      "text_uk": "намалював іконку, яка є в MargyT",
+      "title": "TikTok SF",
+      "text": "drew an icon TikTok SF ships with",
+      "text_ru": "нарисовал иконку, которая есть в TikTok SF",
+      "text_uk": "намалював іконку, яка є в TikTok SF",
       "button": "Got it",
       "button_ru": "Понятно",
       "button_uk": "Зрозуміло"
@@ -82,10 +82,10 @@
         "7660087479496016903"
       ],
       "colour": "FF6FA5",
-      "title": "MargyT",
-      "text": "supported the making of MargyT",
-      "text_ru": "поддержал разработку MargyT",
-      "text_uk": "підтримав розробку MargyT",
+      "title": "TikTok SF",
+      "text": "supported the making of TikTok SF",
+      "text_ru": "поддержал разработку TikTok SF",
+      "text_uk": "підтримав розробку TikTok SF",
       "button": "Got it",
       "button_ru": "Понятно",
       "button_uk": "Зрозуміло"
@@ -97,7 +97,7 @@
         "7662504626076730386"
       ],
       "colour": "FFE9A0",
-      "title": "MargyT",
+      "title": "TikTok SF",
       "text": "толстопузая маргиТ",
       "button": "uhh nope",
       "button_ru": "нет",

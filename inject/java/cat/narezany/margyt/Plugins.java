@@ -277,7 +277,7 @@ public final class Plugins {
                     folder);
             if (!info.entry.matches("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)+")) info.trouble = "manifest has no valid entry class";
             if (info.minApi > MargyPlugin.API) {
-                info.trouble = "wants MargyT plugin api " + info.minApi
+                info.trouble = "wants TikTok SF plugin api " + info.minApi
                         + ", this one is " + MargyPlugin.API;
             }
             // a plugin that names the TikTok it was written against is not run
@@ -635,7 +635,7 @@ public final class Plugins {
             if(info.trouble!=null)throw new Exception(info.trouble);
             if (info.minApi > MargyPlugin.API) {
                 throw new Exception("the plugin wants api " + info.minApi
-                        + " and this MargyT has " + MargyPlugin.API);
+                        + " and this TikTok SF has " + MargyPlugin.API);
             }
             if (info.tiktok.length() > 0 && !info.tiktok.equals(Version.TIKTOK)) {
                 throw new Exception("the plugin was written for TikTok " + info.tiktok

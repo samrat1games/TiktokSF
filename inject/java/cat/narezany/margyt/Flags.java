@@ -226,11 +226,6 @@ public final class Flags {
 
             made.put("profile_left_align", on(prefs, KEY_NEW_PROFILE) ? one : none);
 
-            // last, so that a developer's answer beats a switch
-            if (DevMode.isOn()) {
-                Map<String, Object> mine = overrides();
-                if (!mine.isEmpty() && FlagGuard.allows()) made.putAll(mine);
-            }
             table = made;
             return made;
         } catch (Throwable error) {

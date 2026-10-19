@@ -34,7 +34,7 @@ final class ChannelBanner extends View {
         super(context);
         setClickable(true);
         setFocusable(true);
-        setContentDescription(Text.CHANNEL_TITLE + " MargyT. " + Text.CHANNEL_NEWS_A + Text.CHANNEL_NEWS_B + ". " + Text.CHANNEL_SUBSCRIBE);
+        setContentDescription(Text.CHANNEL_TITLE + " TikTok SF. " + Text.CHANNEL_NEWS_A + Text.CHANNEL_NEWS_B + ". " + Text.CHANNEL_SUBSCRIBE);
         // A paper plane on a -1..1 board: the lit wing and body, and the shaded fold under them.
         plane.moveTo(-1f, 0.12f); plane.lineTo(1f, -0.78f); plane.lineTo(0.32f, 0.86f);
         plane.lineTo(-0.02f, 0.3f); plane.lineTo(-0.26f, 0.5f); plane.lineTo(-0.3f, 0.22f); plane.close();
@@ -109,7 +109,7 @@ final class ChannelBanner extends View {
         paint(ink,0xFFFFFFFF);
         ink.setTextSize(64 * s);
         canvas.drawText(Text.CHANNEL_TITLE, 265 * s, 102 * s, ink);
-        canvas.drawText("MargyT", 265 * s, 168 * s, ink);
+        canvas.drawText("TikTok SF", 265 * s, 168 * s, ink);
 
         // Neon line: a wide soft halo, a tight one, then the bright core on top.
         ink.setTextSize(45 * s);

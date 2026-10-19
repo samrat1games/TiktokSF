@@ -34,7 +34,6 @@ class NativeFlagsTests(unittest.TestCase):
    'com/bytedance/ies/abmock/SettingsManager.java':'package com.bytedance.ies.abmock;public class SettingsManager {public static boolean LIZ(String k,boolean v){return v;}public static int LJ(String k,int v){return v;}public static long LJFF(String k,long v){return v;}public static String LJI(String k,String v){return v;}public static float LIZJ(String k,float v){return v;}public static double LIZIZ(String k,double v){return v;}}',
    'cat/narezany/margyt/Margy.java':'package cat.narezany.margyt;class Margy {static String PREFS="test";static android.content.Context context(){return new android.content.Context();}}',
    'cat/narezany/margyt/Feed.java':'package cat.narezany.margyt;class Feed {static boolean isEnabled(){return false;}}',
-   'cat/narezany/margyt/DevMode.java':'package cat.narezany.margyt;class DevMode {static boolean on;static boolean isOn(){return on;}}',
    'cat/narezany/margyt/Diary.java':'package cat.narezany.margyt;class Diary {static void note(String line){}static void detail(String line){}}',
    'cat/narezany/margyt/FlagGuard.java':'package cat.narezany.margyt;class FlagGuard {static boolean allows(){return true;}static void again(){}}',
    'cat/narezany/margyt/Flags.java':(ROOT/'inject/java/cat/narezany/margyt/Flags.java').read_text(encoding='utf-8'),
@@ -54,14 +53,6 @@ class NativeFlagsTests(unittest.TestCase):
      check(Flags.forcedInt("profile_left_align")==1,"the new profile is on for everybody");
      Flags.set(Flags.KEY_NEW_PROFILE,false);check(Flags.forcedInt("profile_left_align")==0,"and off is the old one");Flags.set(Flags.KEY_NEW_PROFILE,true);
      check(Flags.forcedBoolean("profile_left_align")==Boolean.TRUE&&Flags.forcedLong("profile_left_align")==1L&&Flags.forcedString("profile_left_align")==null,"a number is read as whatever the reader wanted");
-     Flags.Known flag=new Flags.Known("some_flag","BOOLEAN",Boolean.FALSE),wide=new Flags.Known("a_double","DOUBLE",0d),lock=new Flags.Known("profile_left_align","INT",0);
-     Flags.override(flag,Boolean.TRUE);Flags.override(wide,Flags.parse(wide,"1,5"));Flags.override(lock,Flags.parse(lock,"7"));
-     check(Flags.forcedBoolean("some_flag")==null&&Flags.forcedInt("profile_left_align")==1,"a developer's answers wait for the developer switch");
-     DevMode.on=true;Flags.forget();
-     check(Flags.forcedBoolean("some_flag")==Boolean.TRUE&&Flags.forcedInt("some_flag")==1&&Flags.forcedDouble("a_double")==1.5&&Flags.forcedInt("profile_left_align")==7,"and beat a switch once it is on");
-     Flags.override(flag,null);check(Flags.forcedBoolean("some_flag")==null&&Flags.overrides().size()==2,"one can be let go");
-     Flags.clearOverrides();check(Flags.forcedInt("profile_left_align")==1&&Flags.overrides().isEmpty(),"or all of them");
-     check(Flags.parse(flag,"yes")==null&&Flags.parse(lock,"1.5")==null&&Flags.parse(new Flags.Known("o","OBJECT",null),"x")==null,"what is not a value of the type is refused");
      check(Flags.flag("audio_comment_publish",5)==5&&Flags.flag("profile_left_align",0)==1,"the older reader is answered from the same table");
     }
    }"""

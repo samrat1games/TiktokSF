@@ -16,7 +16,7 @@ import re
 import time
 from typing import Dict, List, Optional
 
-from . import accent as accent_module, artwork, prerecolour, dexcache, dexpatch, icon as icon_module, manifest as manifest_module, nightly, resadd, widget
+from . import accent as accent_module, artwork, prerecolour, dexcache, dexpatch, icon as icon_module, manifest as manifest_module, nightly, resadd
 from .apkzip import Apk, STORED
 from .arsc import Arsc
 from . import axml as axml_module
@@ -269,7 +269,6 @@ class Build:
 
         self.say("Icons to choose from")
         extended = self.add_icon_choices(apk, arsc, manifest)
-        extended = self.add_widget(apk, extended, manifest)
         self.add_assets(apk)
         self.add_prerecoloured(apk)
 
@@ -456,7 +455,7 @@ class Build:
                 "    static final boolean TEST = %s;\n"
                 "}\n" % (mod, tiktok, "true" if test else "false")
             )
-        self.detail("MargyT %s on TikTok %s%s"
+        self.detail("TikTok SF %s on TikTok %s%s"
                     % (mod, tiktok, ", a test build" if test else ""))
 
     def write_theme(self, arsc: Arsc) -> None:
@@ -678,20 +677,6 @@ class Build:
         self.detail("%d launcher entries declared, all off but %s"
                     % (len(self.ICONS), entry.rsplit(".", 1)[-1]))
         return extended
-
-    WIDGET = PACKAGE + ".CatWidget"
-
-    def add_widget(self, apk: Apk, table: bytes, manifest: Axml) -> bytes:
-        """The widget's two files, in the apk, in the table, and in the manifest."""
-        apk.add(widget.LAYOUT_PATH, widget.layout_xml())
-        apk.add(widget.XML_PATH, widget.info_xml())
-        table = resadd.add_files(table, widget.LAYOUT_PACKAGE, "layout",
-                                 [("margyt_widget", widget.LAYOUT_PATH)], "margyt.layout")
-        table = resadd.add_files(table, widget.XML_PACKAGE, "xml",
-                                 [("margyt_widget_info", widget.XML_PATH)], "margyt.xml")
-        manifest_module.add_widget(manifest, self.WIDGET, widget.XML_ID)
-        self.detail("a home-screen widget declared, its layout 0x%08X" % widget.LAYOUT_ID)
-        return table
 
     def find_anchors(self, apk: Apk) -> None:
         """Find the methods whose signature is known and whose name is not."""
@@ -922,14 +907,12 @@ def _chunked(encoded: str) -> str:
 
 def _thumbnail(path: str) -> str:
     """A small png of a big one, as base64, for the settings to show."""
-    from PIL import Image
+    from . import png
 
-    image = Image.open(path).convert("RGBA")
-    image.thumbnail((192, 192), Image.LANCZOS)
-    from io import BytesIO
-    out = BytesIO()
-    image.save(out, "PNG", optimize=True)
-    return base64.b64encode(out.getvalue()).decode("ascii")
+    with open(path, "rb") as handle:
+        image = png.decode(handle.read())
+    small = image.resized(192) if max(image.width, image.height) > 192 else image
+    return base64.b64encode(png.encode(small)).decode("ascii")
 
 
 def _signed(value: int) -> int:

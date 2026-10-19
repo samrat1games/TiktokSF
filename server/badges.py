@@ -49,7 +49,6 @@ import zipfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-import dep
 import guard
 import panel
 import tiktok
@@ -230,7 +229,6 @@ def prepare():
                          ("name", "TEXT NOT NULL DEFAULT ''")):
         if column not in owner_columns:
             db.execute("ALTER TABLE owner ADD COLUMN %s %s" % (column, kind))
-    dep.prepare(db)
     db.commit()
     db.close()
     take_in_admin()
@@ -755,20 +753,6 @@ def crashes(limit=60):
 
 #: one turn at a time, whoever it is for: two requests that both read a
 #: balance before either wrote it would both be staking the same coins
-DEP_TURN = threading.Lock()
-
-
-def dep_play(body, ip):
-    """A turn at the Dep Calculator, for an account that has proved itself."""
-    db = connect()
-    try:
-        uid = vouched(db, body)
-        if not uid:
-            return 403, {"error": "prove"}
-        with DEP_TURN:
-            return dep.play(db, uid, body)
-    finally:
-        db.close()
 
 
 def free(body, ip):
@@ -1476,8 +1460,6 @@ class Handler(BaseHTTPRequestHandler):
             code, out = profile(body, ip)
         elif path == "/old":
             code, out = free(body, ip)
-        elif path == "/dep":
-            code, out = dep_play(body, ip)
         elif path == "/gradient":
             code, out = gradient(body, ip)
         elif path == "/crash":

@@ -720,7 +720,6 @@ public final class Themes {
 
     private static void walk(View view, int depth) {
         if (view == null || depth > DEEP || ++seen > BUDGET) return;
-        if (Version.TEST) ShareProbe.look(view);
 
         android.graphics.drawable.Drawable wears = view.getBackground();
         if (wears != null) {

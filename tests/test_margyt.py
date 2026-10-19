@@ -268,11 +268,11 @@ class ArscTest(unittest.TestCase):
     def test_a_value_can_be_repainted_without_moving_a_byte(self):
         colour = self.find_colour()
         size = len(self.arsc.data)
-        self.arsc.set_value(colour, colour.kind, artwork.MINT)
+        self.arsc.set_value(colour, colour.kind, artwork.BACKDROP)
         self.assertEqual(len(self.arsc.data), size)
         again = Arsc(self.arsc.build())
         repainted = [v for v in again.values(self.colour_id) if v.offset == colour.offset][0]
-        self.assertEqual(repainted.data, artwork.MINT)
+        self.assertEqual(repainted.data, artwork.BACKDROP)
 
     def find_colour(self):
         for package in self.arsc.packages:
@@ -357,14 +357,14 @@ class PngTest(unittest.TestCase):
     def test_the_master_is_what_it_claims(self):
         self.assertEqual((self.master.width, self.master.height), (512, 512))
 
-    def test_resizing_keeps_the_ground_mint(self):
+    def test_resizing_keeps_the_ground_black(self):
         """The corner is rounded away now, so the ground is read inside it."""
         for size in (48, 56, 192):
             small = self.master.resized(size)
             self.assertEqual(small.width, size)
             at = ((size // 8) * size + size // 2) * 4
             self.assertEqual(tuple(small.pixels[at:at + 4]),
-                             (0x8D, 0xD1, 0xB0, 0xFF))
+                             (0, 0, 0, 0xFF))
             self.assertEqual(small.pixels[3], 0)   # and the corner is gone
 
     def test_encode_decode_is_lossless(self):
@@ -684,7 +684,7 @@ class IconTest(unittest.TestCase):
             # the ground rather than the corner: the master is rounded
             at = ((image.height // 8) * image.width + image.width // 2) * 4
             self.assertEqual(tuple(image.pixels[at:at + 4]),
-                             (0x8D, 0xD1, 0xB0, 0xFF))
+                             (0, 0, 0, 0xFF))
 
         # the adaptive icon still points where it did; its layers are ours now
         adaptive = Axml.parse(self.apk.read("res/mipmap-anydpi-v26/ic_app.xml"))
@@ -1218,31 +1218,6 @@ class TheIconsKeepTheirPlaces(unittest.TestCase):
         from margyt.build import Build
         keys = [key for key, _label in Build.ICONS]
         self.assertEqual(keys[:len(self.SHIPPED)], self.SHIPPED)
-class DeveloperModeSourceTest(unittest.TestCase):
-    def _read(self, name):
-        path = os.path.join(ROOT, "inject", "java", "cat", "narezany", "margyt", name)
-        with open(path, encoding="utf-8") as handle:
-            return handle.read()
-
-    def test_five_taps_on_the_heading_switch_it_on(self):
-        self.assertIn("NEEDED = 5", self._read("DevMode.java"))
-        settings = self._read("SettingsActivity.java")
-        self.assertIn("developerTap();", settings)
-        self.assertIn("DevMode.set(true)", settings)
-
-    def test_the_full_report_never_carries_the_account(self):
-        report = self._read("Diagnostics.java")
-        body = report[report.index("static String fullReport()"):report.index("static String report()")]
-        self.assertNotIn("Account.", body)
-        self.assertNotIn("getAll()", body)
-        self.assertIn("Diary.lines()", body)
-
-    def test_an_ordinary_diary_keeps_its_size(self):
-        diary = self._read("Diary.java")
-        self.assertIn("KEEP = 40;", diary)
-        self.assertIn("DevMode.isOn() ? KEEP_DEV : KEEP", diary)
-
-
 class ProfileVerificationSourceTest(unittest.TestCase):
     def _read(self, name):
         path = os.path.join(ROOT, "inject", "java", "cat", "narezany", "margyt", name)
