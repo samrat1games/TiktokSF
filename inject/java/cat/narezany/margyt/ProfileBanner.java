@@ -50,7 +50,7 @@ final class ProfileBanner {
     private static final String VERSION = "profile_banner_version";
     private static final String FPS = "profile_banner_fps";
     private static final int TAG = 0x50424E52;
-    private static final int FRAME_WIDTH = 540, MAX_FRAMES = 72, SECONDS = 6;
+    private static final int FRAME_WIDTH = 480, MAX_FRAMES = 360, SECONDS = 40;
     private static final WeakHashMap<Activity, Boolean> WATCHED = new WeakHashMap<Activity, Boolean>();
 
     private static SharedPreferences prefs(Context context) {
@@ -190,9 +190,10 @@ final class ProfileBanner {
                 height = swap;
             }
             if (width <= 0 || height <= 0 || length <= 0) return false;
+            // the whole video, up to forty seconds, at the steadiest speed that fits in the frames allowed
             long span = Math.min(length, SECONDS * 1000L);
-            int count = (int) Math.max(1, Math.min(MAX_FRAMES, span / 100L));
-            int fps = (int) Math.max(1, Math.round(count * 1000.0 / span));
+            int fps = (int) Math.max(4, Math.min(12, MAX_FRAMES * 1000L / span));
+            int count = (int) Math.max(1, Math.min(MAX_FRAMES, span * fps / 1000L));
             int fw = Math.min(FRAME_WIDTH, width), fh = Math.max(1, Math.round(height * (fw / (float) width)));
             staging.mkdirs();
             File[] old = staging.listFiles();
@@ -201,9 +202,10 @@ final class ProfileBanner {
             for (int i = 0; i < count; i++) {
                 long at = span * i / count;
                 Bitmap frame = reader.getScaledFrameAtTime(at * 1000L, MediaMetadataRetriever.OPTION_CLOSEST, fw, fh);
+                Screen.progress("banner", Local.of("Баннер из видео"), (i + 1) * 100 / count);
                 if (frame == null) continue;
                 try (FileOutputStream out = new FileOutputStream(new File(staging, String.format("%03d.jpg", got)))) {
-                    frame.compress(Bitmap.CompressFormat.JPEG, 82, out);
+                    frame.compress(Bitmap.CompressFormat.JPEG, 78, out);
                 }
                 frame.recycle();
                 got++;
@@ -220,7 +222,8 @@ final class ProfileBanner {
             }
             File frames = new File(home(context), "frames");
             if (!staging.renameTo(frames)) return false;
-            done(context, FRAMES, Math.max(1, Math.round(got * 1000f / span)));
+            Screen.progressDone("banner");
+            done(context, FRAMES, fps);
             return true;
         } finally {
             try {
