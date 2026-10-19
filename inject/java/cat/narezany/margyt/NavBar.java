@@ -777,7 +777,7 @@ final class NavBar {
                 bottom = tall;
             }
             // compose-hig's bar: 62 dp tall, floating a little above the bottom edge
-            float lift = 10f * unit;
+            float lift = 4f * unit;
             body.set(8f * unit, bottom - lift - 62f * unit, wide - 8f * unit, bottom - lift);
             float inside = 4f * unit, left = body.left + inside, right = body.right - inside;
             int centre = tabs.length / 2;
@@ -840,6 +840,13 @@ final class NavBar {
             if (tabs.length == 0 || body.isEmpty() || away >= 1f) return;
             int veil = away > 0f ? canvas.saveLayerAlpha(body.left - unit, body.top - 8f * unit, body.right + unit,
                     body.bottom + unit, Math.round(255f * (1f - away))) : -1;
+            content(canvas);
+            lens(canvas);
+            if (veil >= 0) canvas.restoreToCount(veil);
+        }
+
+        /** The capsule and what is on it, without the glass. Drawn on the screen, and into the picture the glass bends. */
+        private void content(Canvas canvas) {
             int ink = Md3.ink(ground);
             boolean dark = bright(ground) < 0.5f;
             // the colours of compose-hig's bar: a grey container, a lighter lens, the system blue for what is selected
@@ -868,12 +875,6 @@ final class NavBar {
             canvas.drawRoundRect(box, round, round, line);
 
             float middle = body.centerY(), icon = 24f * unit, gap = 6f * unit;
-            if (dragging) {
-                int near = nearest();
-                float wideLens = near < 0 ? 64f * unit : tabs[near].right - tabs[near].left;
-                box.set(lensX - wideLens / 2f - 4f * unit, body.top + unit, lensX + wideLens / 2f + 4f * unit, body.bottom - unit);
-                glass(canvas, box, 1f, pill);
-            }
             for (Tab tab : tabs) {
                 int saved = -1;
                 if (tab.shown < 0.99f) {
@@ -884,11 +885,6 @@ final class NavBar {
                 if (tab.kind == CREATE) {
                     create(canvas, centre, middle, ink, lit);
                 } else {
-                    if (!dragging && tab.open > 0.01f) {
-                        float half = ((tab.right - tab.left) / 2f - 2f * unit) * (0.8f + 0.2f * tab.open);
-                        box.set(centre - half, body.top + 3f * unit, centre + half, body.bottom - 3f * unit);
-                        glass(canvas, box, Math.min(1f, tab.open * 1.5f), pill);
-                    }
                     // compose-hig's tab: the icon above, the name under it, the open tab in the accent
                     float iconLeft = centre - icon / 2f;
                     float iconTop = body.top + 0.21f * body.height();
@@ -916,7 +912,62 @@ final class NavBar {
                 }
                 if (saved >= 0) canvas.restoreToCount(saved);
             }
-            if (veil >= 0) canvas.restoreToCount(veil);
+        }
+
+        private Bitmap backdrop;
+        private Canvas backdropCanvas;
+        private final RectF lensBox = new RectF();
+        private LiquidLens liquid;
+        private float press;
+
+        /** One lens that is under the open tab, goes between tabs as they open, and takes the finger when it is held. */
+        private void lens(Canvas canvas) {
+            float sum = 0f, at = 0f, across = 0f;
+            for (Tab tab : tabs) {
+                if (tab.kind == CREATE) continue;
+                sum += tab.open;
+                at += tab.open * (tab.left + tab.right) / 2f;
+                across += tab.open * (tab.right - tab.left);
+            }
+            float centre, wide;
+            float want = dragging ? 1f : 0f;
+            press += (want - press) * 0.35f;
+            if (Math.abs(want - press) > 0.01f) invalidateSelf();
+            if (dragging) {
+                int near = nearest();
+                centre = lensX;
+                wide = near < 0 ? 64f * unit : tabs[near].right - tabs[near].left;
+            } else if (sum > 0.01f) {
+                centre = at / sum;
+                wide = across / sum;
+            } else {
+                return;
+            }
+            float grow = 1f + 0.28f * press;
+            float half = (wide - 4f * unit) / 2f * grow, high = (body.height() - 6f * unit) / 2f * grow;
+            lensBox.set(centre - half, body.centerY() - high, centre + half, body.centerY() + high);
+            float shown = dragging ? 1f : Math.min(1f, sum * 1.5f);
+            if (LiquidLens.supported()) {
+                try {
+                    int w = Math.round(body.width()), h = Math.round(body.height());
+                    if (backdrop == null || backdrop.getWidth() != w || backdrop.getHeight() != h) {
+                        backdrop = Bitmap.createBitmap(Math.max(1, w), Math.max(1, h), Bitmap.Config.ARGB_8888);
+                        backdropCanvas = new Canvas(backdrop);
+                    }
+                    backdrop.eraseColor(0);
+                    int saved = backdropCanvas.save();
+                    backdropCanvas.translate(-body.left, -body.top);
+                    content(backdropCanvas);
+                    backdropCanvas.restoreToCount(saved);
+                    if (liquid == null) liquid = new LiquidLens();
+                    liquid.draw(canvas, backdrop, body.left, body.top, lensBox, unit, shown);
+                    return;
+                } catch (Throwable error) {
+                    Diary.detail("liquid lens: " + error);
+                }
+            }
+            boolean dark = bright(ground) < 0.5f;
+            glass(canvas, lensBox, shown, dark ? 0xFF48484A : 0xFFD8D8DD);
         }
 
         /** The icon of a tab: one of the mod's, or TikTok's own for a tab the mod has none for. */
