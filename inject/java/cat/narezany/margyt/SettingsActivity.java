@@ -234,7 +234,6 @@ public class SettingsActivity extends Activity {
             return;
         }
         column.addView(title(settingsGroup == 0 ? "TikTok SF" : groupName(settingsGroup)));
-        if(settingsGroup==0 || searchQuery.length()>0)column.addView(searchBox());
         if (settingsGroup != 0) column.addView(wrap(actionRow("info",Local.of("Подсказки"),null,this::showSectionHelp)));
         if (searchQuery.length() > 0) {
             searchResults();
@@ -243,24 +242,11 @@ public class SettingsActivity extends Activity {
         }
 
         if (settingsGroup == 0) {
-            if (Badges.freeStillOpen() && !Mine.hasFree()) column.addView(freeBanner());
-            column.addView(donateBanner());
             column.addView(groupNavigation());
-            column.addView(wrap(actionRow("info",Local.of("Обучение"),null,() -> Tutorial.show(this))));
-            column.addView(versions());
             showRestartBar();
             restoreScroll(0);
             return;
         }
-
-        column.addView(section(Text.APPEARANCE));
-        LinearLayout icons = card();
-        icons.addView(iconHead());
-        if (iconOpen) {
-            icons.addView(line());
-            icons.addView(appear(iconChoices()));
-        }
-        column.addView(wrap(icons));
 
         column.addView(section(Text.ACCENT));
         LinearLayout accent = card();
@@ -274,31 +260,6 @@ public class SettingsActivity extends Activity {
             accent.addView(appear(palette()));
         }
         column.addView(wrap(accent));
-
-        LinearLayout loading = card();
-        loading.addView(liveToggleRow("palette", Text.LOADING_SHAPES, Loading.isEnabled(),
-                Loading::setEnabled));
-        loading.addView(quiet(Text.LOADING_NOTE));
-        loading.addView(line());
-        loading.addView(toggleRow("image", Text.ROUND_CARDS, Corners.isEnabled(),
-                Corners::setEnabled));
-        loading.addView(line());
-        loading.addView(actionRow("account_circle", Text.AVATAR_SHAPE,
-                AvatarShape.nameOf(AvatarShape.chosen()), this::chooseAvatarShape));
-        loading.addView(line());
-        loading.addView(toggleRow("view_compact", Text.NEW_PROFILE, Flags.isOn(Flags.KEY_NEW_PROFILE),
-                on -> Flags.set(Flags.KEY_NEW_PROFILE, on)));
-        loading.addView(line());
-        loading.addView(toggleRow("tune", Text.NAV_CAPSULE, NavBar.isEnabled(), NavBar::setEnabled));
-        loading.addView(line());
-        loading.addView(toggleRow("tune", Text.MD3_FEED, Md3.isOn(Md3.KEY_FEED), on -> Md3.set(Md3.KEY_FEED, on)));
-        loading.addView(line());
-        loading.addView(toggleRow("tune", Text.MD3_ICONS, Md3.isOn(Md3.KEY_ICONS), on -> Md3.set(Md3.KEY_ICONS, on)));
-        loading.addView(line());
-        loading.addView(toggleRow("tune", Text.MD3_PROFILE, Md3.isOn(Md3.KEY_PROFILE), on -> Md3.set(Md3.KEY_PROFILE, on)));
-        loading.addView(line());
-        loading.addView(toggleRow("tune", Text.MD3_INBOX, Md3.isOn(Md3.KEY_INBOX), on -> Md3.set(Md3.KEY_INBOX, on)));
-        column.addView(wrap(loading));
 
         column.addView(section(Text.THEME));
         LinearLayout theme = card();
@@ -3582,7 +3543,7 @@ public class SettingsActivity extends Activity {
         switch (group) {
             case 1: return Local.of("Оформление");
             case 2: return Local.of("Профиль");
-            case 3: return Local.of("Лента и видео");
+            case 3: return Local.of("Регион");
             case 4: return Local.of("Инструменты");
             case 5: return Local.of("О проекте");
             case 6: return Local.of("Плагины");
@@ -3607,14 +3568,14 @@ public class SettingsActivity extends Activity {
     private View groupNavigation() {
         LinearLayout list = card();
         String[] icons = {"palette", "group", "play_circle", "tune", "info", "extension", "chat", "flare"};
-        String[] notes = {Local.of("Акцент, тема и шрифты"),
+        String[] notes = {Local.of("Акцент и цвета темы"),
                 Local.of("Значки, градиент и аккаунт"),
-                Local.of("Просмотр, кнопки, защита экрана и регион"),
+                Local.of("Регион TikTok и страна"),
                 Local.of("Скачивание, копии и диагностика"),
                 Local.of("Версия, обновления и участники"), Local.of("Магазин и установленные"),
                 Local.of("Друзья, серии и уведомления"), Text.FUN_NOTE};
         // Shelf order on screen: what people touch daily first, the project itself last.
-        int[] shelf = {1, 2, 3, 7, 4, 6, 8, 5};
+        int[] shelf = {1, 3, 6};
         for (int n = 0; n < shelf.length; n++) {
             final int i = shelf[n];
             final int chosen = i;
@@ -3664,11 +3625,17 @@ public class SettingsActivity extends Activity {
 
     private void filterGroup() {
         int current = 0;
+        boolean kept = true;
         for (int i = 3; i < column.getChildCount(); i++) {
             View item = column.getChildAt(i);
-            if (item instanceof TextView && sectionTargets.containsValue(item))
-                current = groupOf(((TextView) item).getText().toString());
-            item.setVisibility(current == settingsGroup ? View.VISIBLE : View.GONE);
+            if (item instanceof TextView && sectionTargets.containsValue(item)) {
+                String name = ((TextView) item).getText().toString();
+                current = groupOf(name);
+                // the colour of the look, the region, and the plugins: nothing else is shown
+                kept = name.equals(Text.ACCENT) || name.equals(Text.THEME) || name.equals(Text.REGION)
+                        || name.equals(Text.COUNTRY) || name.equals(Text.PLUGINS);
+            }
+            item.setVisibility(current == settingsGroup && kept ? View.VISIBLE : View.GONE);
         }
     }
 
