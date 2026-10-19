@@ -116,11 +116,11 @@ final class LiquidLens {
         shader.setFloatUniform("uCenter", lens.centerX(), lens.centerY());
         shader.setFloatUniform("uSize", w, h);
         shader.setFloatUniform("uRadius", h * 0.5f);
-        shader.setFloatUniform("uZ", h * 0.5f * 0.26f);
+        shader.setFloatUniform("uZ", h * 0.5f * 0.4f);
         shader.setFloatUniform("uScale", unit);
         shader.setFloatUniform("uAlpha", alpha);
-        shader.setFloatUniform("uRefract", 0.42f);
-        shader.setFloatUniform("uChroma", 0.03f);
+        shader.setFloatUniform("uRefract", 0.6f);
+        shader.setFloatUniform("uChroma", 0.04f);
         shader.setFloatUniform("uEdge", 0.7f);
         shader.setFloatUniform("uSpec", 0.35f);
         paint.setShader(shader);

@@ -777,7 +777,7 @@ final class NavBar {
                 bottom = tall;
             }
             // compose-hig's bar: 62 dp tall, floating a little above the bottom edge
-            float lift = 4f * unit;
+            float lift = -8f * unit;
             body.set(8f * unit, bottom - lift - 62f * unit, wide - 8f * unit, bottom - lift);
             float inside = 4f * unit, left = body.left + inside, right = body.right - inside;
             int centre = tabs.length / 2;
@@ -918,7 +918,9 @@ final class NavBar {
         private Canvas backdropCanvas;
         private final RectF lensBox = new RectF();
         private LiquidLens liquid;
-        private float press;
+        private float press, springPos, springSpeed;
+        private long springAt;
+        private boolean springed;
 
         /** One lens that is under the open tab, goes between tabs as they open, and takes the finger when it is held. */
         private void lens(Canvas canvas) {
@@ -929,22 +931,39 @@ final class NavBar {
                 at += tab.open * (tab.left + tab.right) / 2f;
                 across += tab.open * (tab.right - tab.left);
             }
-            float centre, wide;
+            float target, wide;
             float want = dragging ? 1f : 0f;
             press += (want - press) * 0.35f;
             if (Math.abs(want - press) > 0.01f) invalidateSelf();
             if (dragging) {
                 int near = nearest();
-                centre = lensX;
+                target = lensX;
                 wide = near < 0 ? 64f * unit : tabs[near].right - tabs[near].left;
             } else if (sum > 0.01f) {
-                centre = at / sum;
+                target = at / sum;
                 wide = across / sum;
             } else {
+                springed = false;
                 return;
             }
-            float grow = 1f + 0.28f * press;
-            float half = (wide - 4f * unit) / 2f * grow, high = (body.height() - 6f * unit) / 2f * grow;
+            // jelly: the lens runs after where it is going on a spring, and is stretched along the way it moves
+            long nowMs = SystemClock.uptimeMillis();
+            float dt = springed ? Math.min(0.05f, (nowMs - springAt) / 1000f) : 0f;
+            springAt = nowMs;
+            if (!springed) {
+                springed = true;
+                springPos = target;
+                springSpeed = 0f;
+            }
+            float stiff = dragging ? 900f : 420f, damp = dragging ? 46f : 26f;
+            springSpeed += ((target - springPos) * stiff - springSpeed * damp) * dt;
+            springPos += springSpeed * dt;
+            if (Math.abs(springSpeed) > unit * 2f || Math.abs(target - springPos) > unit * 0.3f) invalidateSelf();
+            float centre = springPos;
+            float stretch = Math.min(0.32f, Math.abs(springSpeed) / Math.max(1f, wide) * 0.16f);
+            float grow = 1.06f + 0.22f * press;
+            float half = (wide - 4f * unit) / 2f * grow * (1f + stretch);
+            float high = (body.height() - 6f * unit) / 2f * grow * (1f - 0.55f * stretch);
             lensBox.set(centre - half, body.centerY() - high, centre + half, body.centerY() + high);
             float shown = dragging ? 1f : Math.min(1f, sum * 1.5f);
             if (LiquidLens.supported()) {
