@@ -851,8 +851,10 @@ final class NavBar {
             if (tabs.length == 0 || body.isEmpty() || away >= 1f) return;
             int veil = away > 0f ? canvas.saveLayerAlpha(body.left - unit, body.top - 8f * unit, body.right + unit,
                     body.bottom + unit, Math.round(255f * (1f - away))) : -1;
+            boolean lensOn = lens();
+            if (lensOn && lensBusy < 0.999f) glass(canvas, lensBox, lensShown * (1f - lensBusy), lensFlat);
             content(canvas);
-            lens(canvas);
+            if (lensOn) glassOver(canvas);
             if (veil >= 0) canvas.restoreToCount(veil);
         }
 
@@ -934,7 +936,7 @@ final class NavBar {
         private boolean springed;
 
         /** One lens that is under the open tab, goes between tabs as they open, and takes the finger when it is held. */
-        private void lens(Canvas canvas) {
+        private boolean lens() {
             float sum = 0f, at = 0f, across = 0f;
             for (Tab tab : tabs) {
                 if (tab.kind == CREATE) continue;
@@ -955,7 +957,7 @@ final class NavBar {
                 wide = across / sum;
             } else {
                 springed = false;
-                return;
+                return false;
             }
             // jelly: the lens runs after where it is going on a spring, and is stretched along the way it moves
             long nowMs = SystemClock.uptimeMillis();
@@ -976,13 +978,22 @@ final class NavBar {
             float half = (wide - 4f * unit) / 2f * grow * (1f + stretch);
             float high = (body.height() - 6f * unit) / 2f * grow * (1f - 0.55f * stretch);
             lensBox.set(centre - half, body.centerY() - high, centre + half, body.centerY() + high);
-            float shown = dragging ? 1f : Math.min(1f, sum * 1.5f);
+            lensShown = dragging ? 1f : Math.min(1f, sum * 1.5f);
             boolean darkPage = bright(ground) < 0.5f;
-            int flat = darkPage ? 0xFF48484A : 0xFFD8D8DD;
+            lensFlat = darkPage ? 0xFF48484A : 0xFFD8D8DD;
             // at rest it is a plain pill; it turns to glass only while it moves or is held
-            float busy = Math.max(press, Math.max(Math.min(1f, Math.abs(springSpeed) / (unit * 60f)),
+            lensBusy = Math.max(press, Math.max(Math.min(1f, Math.abs(springSpeed) / (unit * 60f)),
                     Math.min(1f, Math.abs(target - springPos) / (unit * 12f))));
-            if (busy < 0.999f) glass(canvas, lensBox, shown * (1f - busy), flat);
+            return true;
+        }
+
+        private float lensShown, lensBusy;
+        private int lensFlat;
+
+        /** The glass, over the tabs: only while the lens moves or is held. */
+        private void glassOver(Canvas canvas) {
+            float shown = lensShown, busy = lensBusy;
+            int flat = lensFlat;
             if (!LiquidLens.supported()) {
                 if (busy > 0f) glass(canvas, lensBox, shown * busy, flat);
                 return;
