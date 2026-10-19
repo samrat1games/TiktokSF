@@ -353,6 +353,7 @@ final class ProfileBanner {
 
     private static void dress(Activity activity, View decor) {
         try {
+            EditProfileRow.dress(activity, decor);
             if (activity.getClass().getName().contains("UserProfile")) return;
             int id = activity.getResources().getIdentifier("t_j", "id", activity.getPackageName());
             if (id == 0) return;

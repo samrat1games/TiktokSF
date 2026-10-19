@@ -133,8 +133,10 @@ public class SettingsActivity extends Activity {
         // drawn in what TikTok's own settings were last seen wearing, which is
         // the theme when one is on: this screen is opened from that one
         skin = Skin.remembered(this);
+        direct = getIntent() != null && getIntent().getBooleanExtra("pick_banner", false);
         Unsaved.look(this);
         dressTheWindow();
+        if (direct && state == null) getWindow().getDecorView().post(this::pickBanner);
         // the list may still be the one cached before this screen existed, so
         // redraw when the server answers rather than waiting for a tap
         Badges.tell(badgeUpdates);
@@ -260,11 +262,7 @@ public class SettingsActivity extends Activity {
         LinearLayout banner = card();
         banner.addView(actionRow("image", Local.of("Фото, GIF или видео с телефона"),
                 ProfileBanner.has(this) ? Local.of("Баннер установлен") : Local.of("Баннера нет"), () -> {
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("*/*");
-            intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {"image/*", "video/*"});
-            startActivityForResult(intent, PICK_BANNER);
+            pickBanner();
         }));
         banner.addView(line());
         banner.addView(actionRow("link", Local.of("По ссылке на видео TikTok"),
@@ -1808,6 +1806,16 @@ public class SettingsActivity extends Activity {
 
     private static final int PICK_FONT = 0x4D46;  // "MF"
     private static final int PICK_BANNER = 0x4D47;
+    /** Opened only to choose a banner for TikTok's own Edit profile: it chooses, hands it over and goes. */
+    private boolean direct;
+
+    private void pickBanner() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {"image/*", "video/*"});
+        startActivityForResult(intent, PICK_BANNER);
+    }
     private static final String BANNER = Local.of("Баннер профиля");
     private static final int PICK_EMOJI = 0x4D45;  // "ME"
     private static final int PICK_PROFILE_BADGE = 0x5450; // "TP"
@@ -2680,6 +2688,10 @@ public class SettingsActivity extends Activity {
     @Override
     protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
+        if (request == PICK_BANNER && direct && (result != RESULT_OK || data == null || data.getData() == null)) {
+            finish();
+            return;
+        }
         if (result != RESULT_OK || data == null) return;
         Uri source = data.getData();
         if (source == null) return;
@@ -2699,7 +2711,12 @@ public class SettingsActivity extends Activity {
         }
 
         if (request == PICK_BANNER) {
-            ProfileBanner.fromUri(this, source, this::rebuild);
+            if (direct) {
+                ProfileBanner.fromUri(this, source, null);
+                finish();
+            } else {
+                ProfileBanner.fromUri(this, source, this::rebuild);
+            }
             return;
         }
         if (request == PICK_FONT || request == PICK_EMOJI) {
