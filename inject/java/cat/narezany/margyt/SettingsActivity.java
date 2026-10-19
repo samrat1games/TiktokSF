@@ -258,13 +258,17 @@ public class SettingsActivity extends Activity {
 
         column.addView(section(BANNER));
         LinearLayout banner = card();
-        banner.addView(actionRow("image", Local.of("Выбрать картинку"),
+        banner.addView(actionRow("image", Local.of("Фото, GIF или видео с телефона"),
                 ProfileBanner.has(this) ? Local.of("Баннер установлен") : Local.of("Баннера нет"), () -> {
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("image/*");
+            intent.setType("*/*");
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {"image/*", "video/*"});
             startActivityForResult(intent, PICK_BANNER);
         }));
+        banner.addView(line());
+        banner.addView(actionRow("link", Local.of("По ссылке на видео TikTok"),
+                Local.of("Вставьте ссылку из кнопки «Поделиться»"), this::bannerFromLink));
         if (ProfileBanner.has(this)) {
             banner.addView(line());
             banner.addView(actionRow("block", Local.of("Убрать баннер"), null, () -> {
@@ -846,6 +850,30 @@ public class SettingsActivity extends Activity {
      * The first thing on the screen, and the only thing here that asks for
      * something. Short, because a long one is an advertisement.
      */
+    /** A link to a post, pasted, becomes the banner. */
+    private void bannerFromLink() {
+        Panel panel = Panel.with(this, skin, Local.of("Баннер по ссылке"));
+        panel.text(Local.of("Откройте видео в TikTok, нажмите «Поделиться → Скопировать ссылку» и вставьте её сюда."));
+        final android.widget.EditText field = panel.field("https://vm.tiktok.com/…");
+        try {
+            android.content.ClipboardManager clips = (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            if (clips != null && clips.hasPrimaryClip() && clips.getPrimaryClip().getItemCount() > 0) {
+                CharSequence pasted = clips.getPrimaryClip().getItemAt(0).coerceToText(this);
+                if (pasted != null && pasted.toString().contains("tiktok.com")) field.setText(pasted);
+            }
+        } catch (Throwable ignored) {
+        }
+        panel.primary(Local.of("Сделать баннером"), () -> {
+            String link = field.getText().toString();
+            if (BannerLink.find(link) == null) {
+                Toast.makeText(this, Local.of("Это не ссылка"), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            ProfileBanner.fromLink(this, link, this::rebuild);
+        });
+        panel.quiet(Text.CLOSE, null).show();
+    }
+
     private View donateBanner() {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
@@ -2671,8 +2699,7 @@ public class SettingsActivity extends Activity {
         }
 
         if (request == PICK_BANNER) {
-            if (ProfileBanner.take(this, source)) rebuild();
-            else Toast.makeText(this, Local.of("Не удалось открыть картинку"), Toast.LENGTH_LONG).show();
+            ProfileBanner.fromUri(this, source, this::rebuild);
             return;
         }
         if (request == PICK_FONT || request == PICK_EMOJI) {

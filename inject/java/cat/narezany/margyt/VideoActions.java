@@ -45,6 +45,7 @@ public final class VideoActions {
   final View selectedRow=row!=null&&row.isShown()&&row.getRootView()==anchor.getRootView()&&NativeRead.aid(post).equals(NativeRead.aid(selected))?row:anchor;
   Context c=anchor.getContext();Panel panel=Panel.with(c,Skin.remembered(c),Text.VIDEO_ACTIONS);
    panel.item("download",Text.ACT_DOWNLOAD,Text.ACT_DOWNLOAD_HINT,()->chooseDownload(c,post));
+  panel.item("image",Local.of("Сделать баннером"),Local.of("Картинка или видео в шапку вашего профиля"),()->makeBanner(c,post));
  panel.item("play_circle",Text.ACT_PLAYBACK,Text.ACT_PLAYBACK_HINT,()->playback(c));
   panel.item("image",Text.SAVE_FRAME,Text.ACT_FRAME_HINT,()->FrameCapture.capture(selectedRow,NativeRead.aid(post)));
   panel.item("visibility_off",Text.ACT_HIDE,Text.ACT_HIDE_HINT,()->{
@@ -53,6 +54,23 @@ public final class VideoActions {
    more.danger("block",Text.BLOCK_AUTHOR,null,()->FeedBlacklist.addPost(post));more.quiet(Text.CLOSE,null).show();
   });
   panel.quiet(Text.CLOSE,null);panel.show();
+ }
+ /** The post as the banner of your own profile: its first photo, or its video. */
+ static void makeBanner(Context c,Object post){
+  if(post==null){Screen.say(Text.VIDEO_NOT_READY);return;}
+  java.util.List<String> urls=new java.util.ArrayList<>();
+  java.util.List<DownloadQuality.Choice> photos=DownloadQuality.photos(post,Download.isEnabled());
+  if(!photos.isEmpty()){urls.addAll(photos.get(0).candidates());}
+  else{
+   Object video=NativeRead.get(post,"getVideo");
+   if(video!=null){
+    Object base=NativeRead.get(video,Download.isEnabled()?"getDownloadNoWatermarkAddr":"getDownloadAddr");
+    if(DownloadQuality.first(base)==null)base=NativeRead.get(video,"getPlayAddr");
+    urls=DownloadQuality.all(DownloadQuality.video(video,base,0));
+   }
+  }
+  if(urls.isEmpty()){Screen.say(Text.VIDEO_NOT_READY);return;}
+  ProfileBanner.fromAddresses(c,urls,null);
  }
  static void playback(Context c){Panel panel=Panel.with(c,Skin.remembered(c),Text.ACT_PLAYBACK);
   panel.item("speed",Text.PLAYER_SPEED,null,()->PlayerTools.choose(c));
