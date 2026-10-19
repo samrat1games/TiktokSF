@@ -234,7 +234,6 @@ public class SettingsActivity extends Activity {
             return;
         }
         column.addView(title(settingsGroup == 0 ? "TikTok SF" : groupName(settingsGroup)));
-        if (settingsGroup != 0) column.addView(wrap(actionRow("info",Local.of("Подсказки"),null,this::showSectionHelp)));
         if (searchQuery.length() > 0) {
             searchResults();
             restoreScroll(previousScroll);
@@ -247,6 +246,15 @@ public class SettingsActivity extends Activity {
             restoreScroll(0);
             return;
         }
+
+        column.addView(section(Text.APPEARANCE));
+        LinearLayout icons = card();
+        icons.addView(iconHead());
+        if (iconOpen) {
+            icons.addView(line());
+            icons.addView(appear(iconChoices()));
+        }
+        column.addView(wrap(icons));
 
         column.addView(section(Text.ACCENT));
         LinearLayout accent = card();
@@ -625,7 +633,6 @@ public class SettingsActivity extends Activity {
         column.addView(fatCat());
 
         filterGroup();
-        column.addView(versions());
 
         showRestartBar();
         restoreScroll(previousScroll);
@@ -2128,7 +2135,32 @@ public class SettingsActivity extends Activity {
      * A toggle's shape is quiet when it is off and fills with the accent, turning
      * by a lobe, when it is on; anything else is a tonal shape that stays put.
      */
+    private static final int[] TILES = {0xFF007AFF, 0xFF34C759, 0xFFFF9500, 0xFFFF2D55, 0xFF5856D6, 0xFF5AC8FA, 0xFFAF52DE, 0xFFFF3B30};
+
+    private static int tileColour(String name) {
+        switch (name) {
+            case "palette": return 0xFFFF2D55;
+            case "language": case "public": return 0xFF007AFF;
+            case "extension": return 0xFF34C759;
+            case "tune": return 0xFF8E8E93;
+            case "wallpaper": case "image": return 0xFF5AC8FA;
+            default: return TILES[(name.hashCode() & 0x7FFFFFFF) % TILES.length];
+        }
+    }
+
     private View icon(String name, boolean toggle, int sizeDp) {
+        Bitmap symbol = SfSymbols.get(name);
+        if (symbol != null) {
+            int tile = Math.round(sizeDp * 0.78f);
+            Expressive.Badge badge = Expressive.Badge.tile(this,
+                    new android.graphics.drawable.BitmapDrawable(getResources(), symbol), tile,
+                    toggle ? 0xFF8E8E93 : tileColour(name), tileColour(name));
+            if (!toggle) badge.set(true, false);
+            LinearLayout.LayoutParams size = new LinearLayout.LayoutParams(dp(tile), dp(tile));
+            size.rightMargin = dp(16);
+            badge.setLayoutParams(size);
+            return badge;
+        }
         android.graphics.drawable.Drawable vector = name.equals("search")
                 ? new Expressive.Magnifier(0xFFFFFFFF) : SettingsGlyph.make(name, 0xFFFFFFFF);
         if (vector == null) {
@@ -3567,7 +3599,7 @@ public class SettingsActivity extends Activity {
 
     private View groupNavigation() {
         LinearLayout list = card();
-        String[] icons = {"palette", "group", "play_circle", "tune", "info", "extension", "chat", "flare"};
+        String[] icons = {"palette", "group", "language", "tune", "info", "extension", "chat", "flare"};
         String[] notes = {Local.of("Акцент и цвета темы"),
                 Local.of("Значки, градиент и аккаунт"),
                 Local.of("Регион TikTok и страна"),
@@ -3626,13 +3658,13 @@ public class SettingsActivity extends Activity {
     private void filterGroup() {
         int current = 0;
         boolean kept = true;
-        for (int i = 3; i < column.getChildCount(); i++) {
+        for (int i = 1; i < column.getChildCount(); i++) {
             View item = column.getChildAt(i);
             if (item instanceof TextView && sectionTargets.containsValue(item)) {
                 String name = ((TextView) item).getText().toString();
                 current = groupOf(name);
                 // the colour of the look, the region, and the plugins: nothing else is shown
-                kept = name.equals(Text.ACCENT) || name.equals(Text.THEME) || name.equals(Text.REGION)
+                kept = name.equals(Text.APPEARANCE) || name.equals(Text.ACCENT) || name.equals(Text.THEME) || name.equals(Text.REGION)
                         || name.equals(Text.COUNTRY) || name.equals(Text.PLUGINS);
             }
             item.setVisibility(current == settingsGroup && kept ? View.VISIBLE : View.GONE);

@@ -55,6 +55,8 @@ public final class Updater {
     // -------------------------------------------------------------- knowing
 
     public static synchronized void start(final Context context) {
+        // TikTok SF is its own build: it never looks for, offers or installs another one
+        if (true) return;
         if (SOURCE.length() == 0) return;
         if (started) return;
         started = true;
@@ -78,6 +80,7 @@ public final class Updater {
      * where the automatic check says nothing unless there is news.
      */
     public static void check(final Context context, final boolean byHand) {
+        if (true) return;
         if (SOURCE.length() == 0) {
             if (byHand) Screen.say(Text.UPDATE_UNAVAILABLE);
             return;
@@ -113,6 +116,7 @@ public final class Updater {
 
     /** Whether what the repository has is ahead of what is installed. */
     public static boolean newer() {
+        if (true) return false;
         return compare(latest, Version.MOD) > 0 && where != null && where.length() > 0;
     }
 

@@ -59,6 +59,12 @@ final class Skin {
      * the row measured is kept instead, and used again here.
      */
     static Skin remembered(Context context) {
+        // compose-hig's grouped look: a grey page and white cards, black page and dark grey cards at night
+        boolean night = (context.getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        float density = context.getResources().getDisplayMetrics().density;
+        if (true) return new Skin(night ? 0xFF000000 : 0xFFF2F2F7, night ? 0xFF1C1C1E : 0xFFFFFFFF,
+                night ? 0xFFFFFFFF : 0xFF000000, Math.round(16 * density), Math.round(24 * density), true);
         try {
             SharedPreferences prefs =
                     context.getSharedPreferences(Margy.PREFS, Context.MODE_PRIVATE);

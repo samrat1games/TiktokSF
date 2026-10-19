@@ -337,6 +337,7 @@ final class Expressive {
         private final int kind, size, glyphSize;
         private final Drawable glyph;
         private final int fillOff, fillOn, inkOff, inkOn;
+        private boolean tile;
         private float state;
         private ValueAnimator motion;
 
@@ -346,12 +347,19 @@ final class Expressive {
             this.kind = wrap(kind);
             this.glyph = glyph;
             this.size = Math.round(dp(context, sizeDp));
-            this.glyphSize = Math.round(dp(context, sizeDp * 0.55f));
+            this.glyphSize = Math.round(dp(context, sizeDp * 0.6f));
             this.fillOff = fillOff;
             this.fillOn = fillOn;
             this.inkOff = inkOff;
             this.inkOn = inkOn;
             setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+        }
+
+        /** An iOS-settings tile: a rounded square in one colour with a white symbol, grey when it is off. */
+        static Badge tile(Context context, Drawable symbol, int sizeDp, int off, int on) {
+            Badge badge = new Badge(context, 0, symbol, sizeDp, off, on, 0xFFFFFFFF, 0xFFFFFFFF);
+            badge.tile = true;
+            return badge;
         }
 
         /** Whether this is lit; animated when asked and the phone allows motion. */
@@ -382,9 +390,14 @@ final class Expressive {
         protected void onDraw(Canvas canvas) {
             float cx = getWidth() / 2f, cy = getHeight() / 2f;
             float radius = Math.min(getWidth(), getHeight()) / 2f;
-            shape(path, kind, cx, cy, radius, 1f, state * 360f / LOBES[kind]);
-            paint.setColor(mix(fillOff, fillOn, state));
-            canvas.drawPath(path, paint);
+            if (tile) {
+                paint.setColor(mix(fillOff, fillOn, state));
+                canvas.drawRoundRect(cx - radius, cy - radius, cx + radius, cy + radius, radius * 0.45f, radius * 0.45f, paint);
+            } else {
+                shape(path, kind, cx, cy, radius, 1f, state * 360f / LOBES[kind]);
+                paint.setColor(mix(fillOff, fillOn, state));
+                canvas.drawPath(path, paint);
+            }
             if (glyph != null) {
                 glyph.setBounds(Math.round(cx - glyphSize / 2f), Math.round(cy - glyphSize / 2f),
                         Math.round(cx + glyphSize / 2f), Math.round(cy + glyphSize / 2f));
