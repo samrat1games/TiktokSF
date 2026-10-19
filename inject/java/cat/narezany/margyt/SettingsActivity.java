@@ -256,6 +256,24 @@ public class SettingsActivity extends Activity {
         }
         column.addView(wrap(icons));
 
+        column.addView(section(BANNER));
+        LinearLayout banner = card();
+        banner.addView(actionRow("image", Local.of("Выбрать картинку"),
+                ProfileBanner.has(this) ? Local.of("Баннер установлен") : Local.of("Баннера нет"), () -> {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("image/*");
+            startActivityForResult(intent, PICK_BANNER);
+        }));
+        if (ProfileBanner.has(this)) {
+            banner.addView(line());
+            banner.addView(actionRow("block", Local.of("Убрать баннер"), null, () -> {
+                ProfileBanner.remove(this);
+                rebuild();
+            }));
+        }
+        column.addView(wrap(banner));
+
         column.addView(section(Text.ACCENT));
         LinearLayout accent = card();
         accent.addView(accentHead());
@@ -1761,6 +1779,8 @@ public class SettingsActivity extends Activity {
     // ---------------------------------------------------------- the font
 
     private static final int PICK_FONT = 0x4D46;  // "MF"
+    private static final int PICK_BANNER = 0x4D47;
+    private static final String BANNER = Local.of("Баннер профиля");
     private static final int PICK_EMOJI = 0x4D45;  // "ME"
     private static final int PICK_PROFILE_BADGE = 0x5450; // "TP"
 
@@ -2650,6 +2670,11 @@ public class SettingsActivity extends Activity {
             return;
         }
 
+        if (request == PICK_BANNER) {
+            if (ProfileBanner.take(this, source)) rebuild();
+            else Toast.makeText(this, Local.of("Не удалось открыть картинку"), Toast.LENGTH_LONG).show();
+            return;
+        }
         if (request == PICK_FONT || request == PICK_EMOJI) {
             if (Fonts.take(this, source, request == PICK_EMOJI)) markChanged();
             else Toast.makeText(this, Text.FONT_FAILED, Toast.LENGTH_LONG).show();
@@ -3629,6 +3654,7 @@ public class SettingsActivity extends Activity {
     private int groupOf(String section) {
         if (section.equals(Text.FUN_DEP) || section.equals(Text.FUN_SCREAMERS)
                 || section.equals(Text.FUN_CAT)) return 8;
+        if (section.equals(BANNER)) return 1;
         if (section.equals(Text.PLUGINS)) return 6;
         if (section.equals(Text.GRADIENT) || section.equals(Text.BADGES) || section.equals(Text.ACCOUNT)) return 2;
         if (section.equals(Text.APPEARANCE) || section.equals(Text.ACCENT)
@@ -3655,7 +3681,7 @@ public class SettingsActivity extends Activity {
                 String name = ((TextView) item).getText().toString();
                 current = groupOf(name);
                 // the colour of the look, the region, and the plugins: nothing else is shown
-                kept = name.equals(Text.APPEARANCE) || name.equals(Text.ACCENT) || name.equals(Text.THEME) || name.equals(Text.REGION)
+                kept = name.equals(Text.APPEARANCE) || name.equals(BANNER) || name.equals(Text.ACCENT) || name.equals(Text.THEME) || name.equals(Text.REGION)
                         || name.equals(Text.COUNTRY) || name.equals(Text.PLUGINS) || name.equals(Text.DOWNLOADS);
             }
             item.setVisibility(current == settingsGroup && kept ? View.VISIBLE : View.GONE);
