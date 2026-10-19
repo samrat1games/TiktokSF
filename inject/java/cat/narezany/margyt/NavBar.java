@@ -851,8 +851,7 @@ final class NavBar {
             if (tabs.length == 0 || body.isEmpty() || away >= 1f) return;
             int veil = away > 0f ? canvas.saveLayerAlpha(body.left - unit, body.top - 8f * unit, body.right + unit,
                     body.bottom + unit, Math.round(255f * (1f - away))) : -1;
-            boolean lensOn = lens();
-            if (lensOn && lensBusy < 0.999f) glass(canvas, lensBox, lensShown * (1f - lensBusy), lensFlat);
+            lensOn = lens();
             content(canvas);
             if (lensOn) glassOver(canvas);
             if (veil >= 0) canvas.restoreToCount(veil);
@@ -886,6 +885,8 @@ final class NavBar {
             box.set(body);
             box.inset(unit / 2f, unit / 2f);
             canvas.drawRoundRect(box, round, round, line);
+            // the open tab at rest: a plain pill, under the icons
+            if (lensOn && lensBusy < 0.999f) glass(canvas, lensBox, lensShown * (1f - lensBusy), lensFlat);
 
             float middle = body.centerY(), icon = 24f * unit, gap = 6f * unit;
             for (Tab tab : tabs) {
@@ -988,6 +989,7 @@ final class NavBar {
         }
 
         private float lensShown, lensBusy;
+        private boolean lensOn;
         private int lensFlat;
 
         /** The glass, over the tabs: only while the lens moves or is held. */
